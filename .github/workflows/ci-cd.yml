@@ -543,17 +543,18 @@ jobs:
             exit 1
           fi
 
-      - name: Build & Test Backend (for Aggregate JaCoCo report)
+      - name: Build & Test Backend (generate JaCoCo XML reports per service)
         working-directory: ./Backend
         run: |
-          mvn -B clean verify dependency:copy-dependencies -DincludeScope=runtime -DskipTests=false
+          mvn -B clean verify jacoco:report dependency:copy-dependencies \
+            -DincludeScope=runtime \
+            -DskipTests=false
 
       - name: Install Frontend Dependencies & Build Coverage
+        working-directory: ./Frontend
         run: |
-          cd Frontend
           npm ci
           npm run test:ci
-          cd ..
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2.3.0
