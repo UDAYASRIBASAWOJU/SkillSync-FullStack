@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.skillsync.notification.controller.NotificationControllerTest
--------------------------------------------------------------------------------
-Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.062 s -- in com.skillsync.notification.controller.NotificationControllerTest

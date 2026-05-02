@@ -1,7 +1,0 @@
-com\skillsync\apigateway\config\CorsConfigTest.class
-com\skillsync\apigateway\filter\SecurityHeadersFilterTest.class
-com\skillsync\apigateway\filter\CsrfOriginFilterTest.class
-com\skillsync\apigateway\filter\JwtAuthenticationFilterTest.class
-com\skillsync\apigateway\filter\RateLimitingFilterTest.class
-com\skillsync\apigateway\ApiGatewayApplicationTest.class
-com\skillsync\apigateway\controller\HealthControllerTest.class
