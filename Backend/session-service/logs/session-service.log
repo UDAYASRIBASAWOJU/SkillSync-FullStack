@@ -1,0 +1,56 @@
+2026-05-02 18:25:40.367 INFO  [session-service] [main] c.s.s.c.ReviewControllerTest - Starting ReviewControllerTest using Java 21.0.7 with PID 22888 (started by udaya in C:\Users\udaya\Downloads\SkillSync_FullStack\SkillSync-FullStack\Backend\session-service)
+2026-05-02 18:25:40.369 DEBUG [session-service] [main] c.s.s.c.ReviewControllerTest - Running with Spring Boot v3.4.4, Spring v6.2.5
+2026-05-02 18:25:40.370 INFO  [session-service] [main] c.s.s.c.ReviewControllerTest - No active profile set, falling back to 1 default profile: "default"
+2026-05-02 18:25:40.407 WARN  [session-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@594c66c3 uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:25:40.409 WARN  [session-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@40d370fa uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:25:40.409 WARN  [session-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@5868ea91 uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:25:44.130 INFO  [session-service] [main] c.s.s.c.ReviewControllerTest - Started ReviewControllerTest in 5.942 seconds (process running for 8.32)
+2026-05-02 18:25:44.495 WARN  [session-service] [main] o.s.d.w.c.SpringDataJacksonConfiguration$PageModule$WarningLoggingModifier - Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
+	For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
+	or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
+
+2026-05-02 18:25:45.204 INFO  [session-service] [main] c.s.s.c.SessionControllerTest - Starting SessionControllerTest using Java 21.0.7 with PID 22888 (started by udaya in C:\Users\udaya\Downloads\SkillSync_FullStack\SkillSync-FullStack\Backend\session-service)
+2026-05-02 18:25:45.204 DEBUG [session-service] [main] c.s.s.c.SessionControllerTest - Running with Spring Boot v3.4.4, Spring v6.2.5
+2026-05-02 18:25:45.204 INFO  [session-service] [main] c.s.s.c.SessionControllerTest - No active profile set, falling back to 1 default profile: "default"
+2026-05-02 18:25:45.207 WARN  [session-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@760a4916 uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:25:45.208 WARN  [session-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@579f253 uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:25:45.208 WARN  [session-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@6afa4a3d uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:25:45.681 INFO  [session-service] [main] c.s.s.c.SessionControllerTest - Started SessionControllerTest in 0.633 seconds (process running for 9.871)
+2026-05-02 18:25:45.701 ERROR [session-service] [main] c.s.s.e.GlobalExceptionHandler - Runtime exception: Session not found: 999
+2026-05-02 18:25:46.624 INFO  [session-service] [main] c.s.s.s.command.ReviewCommandService - [CQRS:COMMAND] Review 100 deleted. Cache invalidated.
+2026-05-02 18:25:46.638 INFO  [session-service] [main] c.s.s.s.command.ReviewCommandService - [CQRS:COMMAND] Review 100 deleted. Cache invalidated.
+2026-05-02 18:25:46.686 INFO  [session-service] [main] c.s.s.s.command.ReviewCommandService - [CQRS:COMMAND] Review 100 submitted. Cache invalidated.
+2026-05-02 18:25:46.702 INFO  [session-service] [main] c.s.s.s.command.ReviewCommandService - [CQRS:COMMAND] Review 100 submitted. Cache invalidated.
+2026-05-02 18:25:46.711 ERROR [session-service] [main] c.s.s.s.command.ReviewCommandService - Failed to publish review event: down
+2026-05-02 18:25:46.711 INFO  [session-service] [main] c.s.s.s.command.ReviewCommandService - [CQRS:COMMAND] Review 100 submitted. Cache invalidated.
+2026-05-02 18:25:46.719 DEBUG [session-service] [main] c.s.s.s.command.ReviewCommandService - Mentor profile lookup failed for id 10: no
+2026-05-02 18:25:46.738 INFO  [session-service] [main] c.s.s.s.command.ReviewCommandService - [CQRS:COMMAND] Review 100 submitted. Cache invalidated.
+2026-05-02 18:25:46.754 INFO  [session-service] [main] c.s.s.s.command.ReviewCommandService - [CQRS:COMMAND] Review 100 submitted. Cache invalidated.
+2026-05-02 18:25:46.765 INFO  [session-service] [main] c.s.s.s.command.ReviewCommandService - [CQRS:COMMAND] Review 100 submitted. Cache invalidated.
+2026-05-02 18:25:46.791 ERROR [session-service] [main] c.s.s.s.c.SessionCommandService - Failed to publish session event: down
+2026-05-02 18:25:46.812 INFO  [session-service] [main] c.s.s.s.c.SessionCommandService - Rolled back session 1 after payment issue. Previous status: ACCEPTED
+2026-05-02 18:25:46.820 INFO  [session-service] [main] c.s.s.s.c.SessionCommandService - Rolled back session 1 after payment issue. Previous status: REQUESTED
+2026-05-02 18:25:46.825 INFO  [session-service] [main] c.s.s.s.c.SessionCommandService - Skipping payment rollback for session 1 because status is CANCELLED
+2026-05-02 18:25:46.835 INFO  [session-service] [main] c.s.s.s.c.SessionCommandService - Rolled back session 1 after payment issue. Previous status: REQUESTED
+2026-05-02 18:25:46.838 INFO  [session-service] [main] c.s.s.s.c.SessionCommandService - Skipping payment rollback for session 1 because status is COMPLETED
+2026-05-02 18:25:46.841 INFO  [session-service] [main] c.s.s.s.c.SessionCommandService - Rolled back session 1 after payment issue. Previous status: REQUESTED
+2026-05-02 18:25:46.847 INFO  [session-service] [main] c.s.s.s.c.SessionCommandService - Rolled back session 1 after payment issue. Previous status: REQUESTED
+2026-05-02 18:25:46.885 ERROR [session-service] [main] c.s.s.s.c.SessionCommandService - Failed to publish mentor metrics update for mentor 10: err
+2026-05-02 18:25:46.936 DEBUG [session-service] [main] c.s.s.s.c.SessionCommandService - Mentor profile lookup failed for id 50: Not found
+2026-05-02 18:25:46.940 INFO  [session-service] [main] c.s.s.s.c.SessionCommandService - [CQRS:COMMAND] Session 1 created in REQUESTED state (awaiting payment confirmation). Cache invalidated.
+2026-05-02 18:25:46.953 WARN  [session-service] [main] c.s.s.s.c.SessionCommandService - Resolved mentor profile id 50 to mentor user id 10 for booking request.
+2026-05-02 18:25:46.953 INFO  [session-service] [main] c.s.s.s.c.SessionCommandService - [CQRS:COMMAND] Session 1 created in REQUESTED state (awaiting payment confirmation). Cache invalidated.
+2026-05-02 18:25:46.962 WARN  [session-service] [main] c.s.s.s.c.SessionCommandService - Unable to validate user 50 via auth-service: down
+2026-05-02 18:25:46.963 WARN  [session-service] [main] c.s.s.s.c.SessionCommandService - Unable to validate user 10 via auth-service: down
+2026-05-02 18:25:46.963 WARN  [session-service] [main] c.s.s.s.c.SessionCommandService - Resolved mentor profile id 50 to mentor user id 10 for booking request.
+2026-05-02 18:25:46.965 INFO  [session-service] [main] c.s.s.s.c.SessionCommandService - [CQRS:COMMAND] Session 1 created in REQUESTED state (awaiting payment confirmation). Cache invalidated.
+2026-05-02 18:25:47.142 INFO  [session-service] [main] c.s.session.service.ReviewService - Review 100 submitted for session 1 by reviewer 20
+2026-05-02 18:25:47.149 ERROR [session-service] [main] c.s.session.service.ReviewService - Failed to publish review event: down
+2026-05-02 18:25:47.150 INFO  [session-service] [main] c.s.session.service.ReviewService - Review 100 submitted for session 1 by reviewer 20
+2026-05-02 18:25:47.173 INFO  [session-service] [main] c.s.s.s.c.SessionCommandService - Skipping payment rollback for session 44 because status is COMPLETED
+2026-05-02 18:25:47.198 INFO  [session-service] [main] c.s.s.s.c.SessionCommandService - Rolled back session 11 after payment issue. Previous status: REQUESTED
+2026-05-02 18:25:47.210 WARN  [session-service] [main] c.s.s.s.c.SessionCommandService - Unable to validate user 22 via auth-service: auth temporarily unavailable
+2026-05-02 18:25:47.210 WARN  [session-service] [main] c.s.s.s.c.SessionCommandService - Resolved mentor profile id 99 to mentor user id 22 for booking request.
+2026-05-02 18:25:47.211 INFO  [session-service] [main] c.s.s.s.c.SessionCommandService - [CQRS:COMMAND] Session 99 created in REQUESTED state (awaiting payment confirmation). Cache invalidated.
+2026-05-02 18:25:47.215 INFO  [session-service] [main] c.s.s.s.c.SessionCommandService - Rolled back session 12 after payment issue. Previous status: ACCEPTED
+2026-05-02 18:25:47.221 INFO  [session-service] [main] c.s.s.s.c.SessionCommandService - [CQRS:COMMAND] Session 1 created in REQUESTED state (awaiting payment confirmation). Cache invalidated.

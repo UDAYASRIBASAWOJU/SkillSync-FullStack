@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PaymentEventConsumer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notification-service</a> &gt; <a href="index.source.html" class="el_package">com.skillsync.notification.consumer</a> &gt; <span class="el_source">PaymentEventConsumer.java</span></div><h1>PaymentEventConsumer.java</h1><pre class="source lang-java linenums">package com.skillsync.notification.consumer;
+
+import com.skillsync.notification.config.RabbitMQConfig;
+import com.skillsync.notification.dto.UserSummary;
+import com.skillsync.notification.feign.AuthServiceClient;
+import com.skillsync.notification.service.EmailService;
+import com.skillsync.notification.service.command.NotificationCommandService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * Consumes payment lifecycle events and pushes notifications + styled emails.
+ */
+@Component
+@RequiredArgsConstructor
+<span class="fc" id="L22">@Slf4j</span>
+public class PaymentEventConsumer {
+
+    private final NotificationCommandService notificationCommandService;
+    private final EmailService emailService;
+    private final AuthServiceClient authServiceClient;
+
+    @Value(&quot;${app.base-url:https://skillsync.udayasri.dev}&quot;)
+    private String appBaseUrl;
+
+    @RabbitListener(queues = RabbitMQConfig.PAYMENT_NOTIFICATION_SUCCESS_QUEUE)
+    public void handlePaymentSuccess(Map&lt;String, Object&gt; event) {
+<span class="fc" id="L34">        Long userId = toLong(event.get(&quot;userId&quot;));</span>
+<span class="fc" id="L35">        String paymentType = String.valueOf(event.get(&quot;paymentType&quot;));</span>
+<span class="fc" id="L36">        String orderId = String.valueOf(event.get(&quot;orderId&quot;));</span>
+<span class="fc" id="L37">        String amount = formatAmount(event.get(&quot;amount&quot;));</span>
+
+<span class="fc" id="L39">        String title = &quot;Payment Successful! ✅&quot;;</span>
+<span class="fc" id="L40">        String message = buildSuccessMessage(paymentType, orderId);</span>
+
+<span class="fc" id="L42">        notificationCommandService.createAndPush(userId, &quot;PAYMENT_SUCCESS&quot;, title, message);</span>
+
+        try {
+<span class="fc" id="L45">            UserSummary user = authServiceClient.getUserById(userId);</span>
+<span class="fc" id="L46">            Map&lt;String, String&gt; details = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L47">            details.put(&quot;Payment For&quot;, paymentType.replace(&quot;_&quot;, &quot; &quot;));</span>
+<span class="fc" id="L48">            details.put(&quot;Order ID&quot;, orderId);</span>
+<span class="fc" id="L49">            details.put(&quot;Amount&quot;, amount);</span>
+<span class="fc" id="L50">            details.put(&quot;Status&quot;, &quot;Successful&quot;);</span>
+
+<span class="fc" id="L52">            emailService.sendEmail(</span>
+<span class="fc" id="L53">                    user.email(),</span>
+                    &quot;SkillSync Payment Confirmation&quot;,
+                    &quot;system-email&quot;,
+<span class="fc" id="L56">                    Map.of(</span>
+<span class="fc" id="L57">                            &quot;recipientName&quot;, displayName(user),</span>
+                            &quot;title&quot;, &quot;Payment Confirmed&quot;,
+                            &quot;preheader&quot;, &quot;Your payment was processed successfully.&quot;,
+                            &quot;primaryMessage&quot;, &quot;Your transaction is complete and the booking workflow has been updated.&quot;,
+                            &quot;detailsTitle&quot;, &quot;Important details&quot;,
+<span class="fc" id="L62">                            &quot;detailsHtml&quot;, emailService.buildDetailsHtml(details),</span>
+                            &quot;actionText&quot;, &quot;View Sessions&quot;,
+                            &quot;actionUrl&quot;, appBaseUrl + &quot;/sessions&quot;,
+                            &quot;footerNote&quot;, &quot;If this was unexpected, contact support immediately.&quot;
+                    )
+            );
+<span class="fc" id="L68">        } catch (Exception e) {</span>
+<span class="fc" id="L69">            log.error(&quot;Failed to send payment success email to user {}: {}&quot;, userId, e.getMessage());</span>
+<span class="fc" id="L70">        }</span>
+
+<span class="fc" id="L72">        log.info(&quot;Processed PAYMENT_SUCCESS event for user {}, orderId={}&quot;, userId, orderId);</span>
+<span class="fc" id="L73">    }</span>
+
+    @RabbitListener(queues = RabbitMQConfig.PAYMENT_NOTIFICATION_FAILED_QUEUE)
+    public void handlePaymentFailed(Map&lt;String, Object&gt; event) {
+<span class="fc" id="L77">        Long userId = toLong(event.get(&quot;userId&quot;));</span>
+<span class="fc" id="L78">        String paymentType = String.valueOf(event.get(&quot;paymentType&quot;));</span>
+<span class="fc" id="L79">        String orderId = String.valueOf(event.get(&quot;orderId&quot;));</span>
+<span class="fc" id="L80">        String reason = normalizeReason(event.get(&quot;compensationReason&quot;));</span>
+<span class="fc" id="L81">        String amount = formatAmount(event.get(&quot;amount&quot;));</span>
+
+<span class="fc" id="L83">        String title = &quot;Payment Failed ❌&quot;;</span>
+<span class="fc" id="L84">        String message = buildFailedMessage(paymentType, orderId, reason);</span>
+
+<span class="fc" id="L86">        notificationCommandService.createAndPush(userId, &quot;PAYMENT_FAILED&quot;, title, message);</span>
+
+        try {
+<span class="fc" id="L89">            UserSummary user = authServiceClient.getUserById(userId);</span>
+<span class="fc" id="L90">            Map&lt;String, String&gt; details = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L91">            details.put(&quot;Payment For&quot;, paymentType.replace(&quot;_&quot;, &quot; &quot;));</span>
+<span class="fc" id="L92">            details.put(&quot;Order ID&quot;, orderId);</span>
+<span class="fc" id="L93">            details.put(&quot;Amount&quot;, amount);</span>
+<span class="fc" id="L94">            details.put(&quot;Reason&quot;, reason);</span>
+
+<span class="fc" id="L96">            emailService.sendEmail(</span>
+<span class="fc" id="L97">                    user.email(),</span>
+                    &quot;Payment Failed - SkillSync&quot;,
+                    &quot;system-email&quot;,
+<span class="fc" id="L100">                    Map.of(</span>
+<span class="fc" id="L101">                            &quot;recipientName&quot;, displayName(user),</span>
+                            &quot;title&quot;, &quot;Payment Failed&quot;,
+                            &quot;preheader&quot;, &quot;Your transaction could not be completed.&quot;,
+                            &quot;primaryMessage&quot;, &quot;No worries. You can retry the payment from your bookings page.&quot;,
+                            &quot;detailsTitle&quot;, &quot;Important details&quot;,
+<span class="fc" id="L106">                            &quot;detailsHtml&quot;, emailService.buildDetailsHtml(details),</span>
+                            &quot;actionText&quot;, &quot;Retry Payment&quot;,
+                            &quot;actionUrl&quot;, appBaseUrl + &quot;/sessions&quot;,
+                            &quot;footerNote&quot;, &quot;Use a fresh payment attempt to avoid duplicate authorization holds.&quot;
+                    )
+            );
+<span class="nc" id="L112">        } catch (Exception e) {</span>
+<span class="nc" id="L113">            log.error(&quot;Failed to send payment failure email to user {}: {}&quot;, userId, e.getMessage());</span>
+<span class="fc" id="L114">        }</span>
+
+<span class="fc" id="L116">        log.info(&quot;Processed PAYMENT_FAILED event for user {}, orderId={}&quot;, userId, orderId);</span>
+<span class="fc" id="L117">    }</span>
+
+    @RabbitListener(queues = RabbitMQConfig.PAYMENT_NOTIFICATION_COMPENSATED_QUEUE)
+    public void handlePaymentCompensated(Map&lt;String, Object&gt; event) {
+<span class="fc" id="L121">        Long userId = toLong(event.get(&quot;userId&quot;));</span>
+<span class="fc" id="L122">        String paymentType = String.valueOf(event.get(&quot;paymentType&quot;));</span>
+<span class="fc" id="L123">        String orderId = String.valueOf(event.get(&quot;orderId&quot;));</span>
+<span class="fc" id="L124">        String reason = normalizeReason(event.get(&quot;compensationReason&quot;));</span>
+<span class="fc" id="L125">        String amount = formatAmount(event.get(&quot;amount&quot;));</span>
+
+<span class="fc" id="L127">        String title = &quot;Payment Issue — Action Required ⚠️&quot;;</span>
+<span class="fc" id="L128">        String message = buildCompensatedMessage(paymentType, orderId, reason);</span>
+
+<span class="fc" id="L130">        notificationCommandService.createAndPush(userId, &quot;PAYMENT_COMPENSATED&quot;, title, message);</span>
+
+        try {
+<span class="fc" id="L133">            UserSummary user = authServiceClient.getUserById(userId);</span>
+<span class="fc" id="L134">            Map&lt;String, String&gt; details = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L135">            details.put(&quot;Payment For&quot;, paymentType.replace(&quot;_&quot;, &quot; &quot;));</span>
+<span class="fc" id="L136">            details.put(&quot;Order ID&quot;, orderId);</span>
+<span class="fc" id="L137">            details.put(&quot;Amount&quot;, amount);</span>
+<span class="fc" id="L138">            details.put(&quot;Issue&quot;, reason);</span>
+
+<span class="fc" id="L140">            emailService.sendEmail(</span>
+<span class="fc" id="L141">                    user.email(),</span>
+                    &quot;Payment Issue Update - SkillSync&quot;,
+                    &quot;system-email&quot;,
+<span class="fc" id="L144">                    Map.of(</span>
+<span class="fc" id="L145">                            &quot;recipientName&quot;, displayName(user),</span>
+                            &quot;title&quot;, &quot;Payment Issue Update&quot;,
+                            &quot;preheader&quot;, &quot;Your payment is received but booking completion needs attention.&quot;,
+                            &quot;primaryMessage&quot;, &quot;Our system flagged a processing issue and initiated recovery safeguards.&quot;,
+                            &quot;detailsTitle&quot;, &quot;Important details&quot;,
+<span class="fc" id="L150">                            &quot;detailsHtml&quot;, emailService.buildDetailsHtml(details),</span>
+                            &quot;actionText&quot;, &quot;Open Support&quot;,
+                            &quot;actionUrl&quot;, appBaseUrl + &quot;/help&quot;,
+                            &quot;footerNote&quot;, &quot;Our team has been notified. Keep this email for reference.&quot;
+                    )
+            );
+<span class="nc" id="L156">        } catch (Exception e) {</span>
+<span class="nc" id="L157">            log.error(&quot;Failed to send payment compensated email to user {}: {}&quot;, userId, e.getMessage());</span>
+<span class="fc" id="L158">        }</span>
+
+<span class="fc" id="L160">        log.info(&quot;Processed PAYMENT_COMPENSATED event for user {}, orderId={}&quot;, userId, orderId);</span>
+<span class="fc" id="L161">    }</span>
+
+    private String buildSuccessMessage(String paymentType, String orderId) {
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        return switch (paymentType) {</span>
+<span class="fc" id="L165">            case &quot;SESSION_BOOKING&quot; -&gt; &quot;Your session booking payment was successful. You can now proceed with your session. (Order: &quot; + orderId + &quot;)&quot;;</span>
+<span class="nc" id="L166">            default -&gt; &quot;Your payment was successful. (Order: &quot; + orderId + &quot;)&quot;;</span>
+        };
+    }
+
+    private String buildFailedMessage(String paymentType, String orderId, String reason) {
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">        String base = switch (paymentType) {</span>
+<span class="nc" id="L172">            case &quot;SESSION_BOOKING&quot; -&gt; &quot;Your session booking payment could not be verified.&quot;;</span>
+<span class="fc" id="L173">            default -&gt; &quot;Your payment could not be verified.&quot;;</span>
+        };
+<span class="fc" id="L175">        return base + &quot; Please try again with a new payment. (Order: &quot; + orderId + &quot;)&quot;;</span>
+    }
+
+    private String buildCompensatedMessage(String paymentType, String orderId, String reason) {
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">        String base = switch (paymentType) {</span>
+<span class="fc" id="L180">            case &quot;SESSION_BOOKING&quot; -&gt; &quot;Your session booking payment was received, but we encountered an issue completing your booking.&quot;;</span>
+<span class="pc" id="L181">            default -&gt; &quot;Your payment was received, but a processing issue occurred.&quot;;</span>
+        };
+<span class="fc" id="L183">        return base + &quot; Our team has been notified and will resolve this shortly. (Order: &quot; + orderId + &quot;)&quot;;</span>
+    }
+
+    private String formatAmount(Object amountRaw) {
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">        if (!(amountRaw instanceof Number number)) {</span>
+<span class="nc" id="L188">            return &quot;₹0.00&quot;;</span>
+        }
+<span class="fc" id="L190">        double amountRupees = number.doubleValue() / 100.0;</span>
+<span class="fc" id="L191">        return String.format(&quot;₹%.2f&quot;, amountRupees);</span>
+    }
+
+    private String normalizeReason(Object reasonRaw) {
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">        if (reasonRaw == null) {</span>
+<span class="nc" id="L196">            return &quot;Not specified&quot;;</span>
+        }
+<span class="fc" id="L198">        String reason = String.valueOf(reasonRaw).trim();</span>
+<span class="pc bpc" id="L199" title="2 of 4 branches missed.">        if (reason.isEmpty() || &quot;null&quot;.equalsIgnoreCase(reason)) {</span>
+<span class="nc" id="L200">            return &quot;Not specified&quot;;</span>
+        }
+<span class="fc" id="L202">        return reason;</span>
+    }
+
+    private String displayName(UserSummary user) {
+<span class="pc bpc" id="L206" title="1 of 2 branches missed.">        String first = user.firstName() != null ? user.firstName().trim() : &quot;&quot;;</span>
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">        String last = user.lastName() != null ? user.lastName().trim() : &quot;&quot;;</span>
+<span class="fc" id="L208">        String full = (first + &quot; &quot; + last).trim();</span>
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">        return full.isEmpty() ? user.email() : full;</span>
+    }
+
+    private Long toLong(Object value) {
+<span class="pc bpc" id="L213" title="1 of 2 branches missed.">        if (value instanceof Number number) {</span>
+<span class="fc" id="L214">            return number.longValue();</span>
+        }
+<span class="nc" id="L216">        return Long.parseLong(String.valueOf(value));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

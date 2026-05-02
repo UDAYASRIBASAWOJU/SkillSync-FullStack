@@ -67,7 +67,7 @@ class EmailServiceTest {
     void sendHtmlEmail_shouldHandleMessagingException() throws MessagingException {
         // Since sendHtmlEmail is private, we call a public method that triggers it
         // We need to mock the send method to throw an exception
-        doThrow(new RuntimeException("Mail server down")).when(mailSender).send(any(MimeMessage.class));
+        doThrow(new org.springframework.mail.MailSendException("Mail server down")).when(mailSender).send(any(MimeMessage.class));
 
         // This should not throw an exception as it's caught in sendHtmlEmail
         emailService.sendWelcomeEmail("user@example.com", "John");

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserCommandService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">user-service</a> &gt; <a href="index.source.html" class="el_package">com.skillsync.user.service.command</a> &gt; <span class="el_source">UserCommandService.java</span></div><h1>UserCommandService.java</h1><pre class="source lang-java linenums">package com.skillsync.user.service.command;
+
+import com.skillsync.cache.CacheService;
+import com.skillsync.user.dto.*;
+import com.skillsync.user.entity.Profile;
+import com.skillsync.user.entity.UserSkill;
+import com.skillsync.user.feign.AuthServiceClient;
+import com.skillsync.user.mapper.UserMapper;
+import com.skillsync.user.repository.ProfileRepository;
+import com.skillsync.user.repository.UserSkillRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+/**
+ * CQRS Command Service for User/Profile operations.
+ * Handles all write operations and cache invalidation.
+ */
+@Service
+@RequiredArgsConstructor
+<span class="fc" id="L24">@Slf4j</span>
+public class UserCommandService {
+
+    private final ProfileRepository profileRepository;
+    private final UserSkillRepository userSkillRepository;
+    private final AuthServiceClient authServiceClient;
+    private final CacheService cacheService;
+
+    @Transactional
+    public ProfileResponse createOrUpdateProfile(Long userId, UpdateProfileRequest request) {
+<span class="fc" id="L34">        Profile profile = profileRepository.findByUserId(userId)</span>
+<span class="fc" id="L35">                .orElse(Profile.builder().userId(userId).build());</span>
+
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (request.firstName() != null) profile.setFirstName(request.firstName());</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (request.lastName() != null) profile.setLastName(request.lastName());</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (request.bio() != null) profile.setBio(request.bio());</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (request.avatarUrl() != null) profile.setAvatarUrl(request.avatarUrl());</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (request.phone() != null) profile.setPhone(request.phone());</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (request.location() != null) profile.setLocation(request.location());</span>
+
+<span class="fc" id="L44">        profile.setProfileCompletePct(calculateCompleteness(profile));</span>
+<span class="fc" id="L45">        profile = profileRepository.save(profile);</span>
+
+<span class="fc bfc" id="L47" title="All 4 branches covered.">        if (request.firstName() != null || request.lastName() != null) {</span>
+<span class="fc" id="L48">            String firstName = profile.getFirstName();</span>
+<span class="fc" id="L49">            String lastName = profile.getLastName();</span>
+
+<span class="fc bfc" id="L51" title="All 4 branches covered.">            if (firstName == null || lastName == null) {</span>
+<span class="fc" id="L52">                var authUser = authServiceClient.getUserById(userId);</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">                if (firstName == null) {</span>
+<span class="fc" id="L54">                    firstName = asText(authUser.get(&quot;firstName&quot;));</span>
+                }
+<span class="fc bfc" id="L56" title="All 2 branches covered.">                if (lastName == null) {</span>
+<span class="fc" id="L57">                    lastName = asText(authUser.get(&quot;lastName&quot;));</span>
+                }
+            }
+
+<span class="fc" id="L61">            authServiceClient.updateUserName(userId, firstName, lastName);</span>
+        }
+
+        // Invalidate versioned caches
+<span class="fc" id="L65">        cacheService.evict(CacheService.vKey(&quot;user:profile:&quot; + userId));</span>
+<span class="fc" id="L66">        cacheService.evict(CacheService.vKey(&quot;user:profile:id:&quot; + profile.getId()));</span>
+<span class="fc" id="L67">        log.info(&quot;[CQRS:COMMAND] Profile updated for userId: {}. Cache invalidated.&quot;, userId);</span>
+
+<span class="fc" id="L69">        return UserMapper.toProfileResponse(profile, List.of());</span>
+    }
+
+    @Transactional
+    public void addSkill(Long userId, AddSkillRequest request) {
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (userSkillRepository.existsByUserIdAndSkillId(userId, request.skillId())) {</span>
+<span class="fc" id="L75">            throw new RuntimeException(&quot;Skill already added to profile&quot;);</span>
+        }
+<span class="fc" id="L77">        UserSkill userSkill = UserSkill.builder()</span>
+<span class="fc" id="L78">                .userId(userId)</span>
+<span class="fc" id="L79">                .skillId(request.skillId())</span>
+<span class="fc" id="L80">                .proficiency(UserSkill.Proficiency.valueOf(request.proficiency()))</span>
+<span class="fc" id="L81">                .build();</span>
+<span class="fc" id="L82">        userSkillRepository.save(userSkill);</span>
+
+        // Invalidate versioned profile cache (skills are part of profile response)
+<span class="fc" id="L85">        cacheService.evict(CacheService.vKey(&quot;user:profile:&quot; + userId));</span>
+<span class="fc" id="L86">        log.info(&quot;[CQRS:COMMAND] Skill {} added for userId: {}. Cache invalidated.&quot;, request.skillId(), userId);</span>
+<span class="fc" id="L87">    }</span>
+
+    @Transactional
+    public void removeSkill(Long userId, Long skillId) {
+<span class="fc" id="L91">        userSkillRepository.deleteByUserIdAndSkillId(userId, skillId);</span>
+
+        // Invalidate versioned profile cache
+<span class="fc" id="L94">        cacheService.evict(CacheService.vKey(&quot;user:profile:&quot; + userId));</span>
+<span class="fc" id="L95">        log.info(&quot;[CQRS:COMMAND] Skill {} removed for userId: {}. Cache invalidated.&quot;, skillId, userId);</span>
+<span class="fc" id="L96">    }</span>
+
+    private int calculateCompleteness(Profile profile) {
+<span class="fc" id="L99">        int score = 0;</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        if (profile.getFirstName() != null) score += 20;</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        if (profile.getLastName() != null) score += 20;</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (profile.getBio() != null) score += 20;</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (profile.getPhone() != null) score += 20;</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        if (profile.getLocation() != null) score += 20;</span>
+<span class="fc" id="L105">        return score;</span>
+    }
+
+    private String asText(Object value) {
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L110">            return &quot;&quot;;</span>
+        }
+<span class="fc" id="L112">        return String.valueOf(value);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

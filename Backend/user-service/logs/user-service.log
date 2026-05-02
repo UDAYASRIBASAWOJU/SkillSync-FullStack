@@ -1,0 +1,162 @@
+2026-05-02 18:26:18.959 INFO  [user-service] [main] c.s.u.controller.AdminControllerTest - Starting AdminControllerTest using Java 21.0.7 with PID 37564 (started by udaya in C:\Users\udaya\Downloads\SkillSync_FullStack\SkillSync-FullStack\Backend\user-service)
+2026-05-02 18:26:18.961 DEBUG [user-service] [main] c.s.u.controller.AdminControllerTest - Running with Spring Boot v3.4.4, Spring v6.2.5
+2026-05-02 18:26:18.963 INFO  [user-service] [main] c.s.u.controller.AdminControllerTest - No active profile set, falling back to 1 default profile: "default"
+2026-05-02 18:26:18.991 WARN  [user-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@1ec8afc4 uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:26:18.993 WARN  [user-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@428e875f uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:26:18.994 WARN  [user-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@1da9f44c uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:26:21.022 INFO  [user-service] [main] c.s.u.controller.AdminControllerTest - Started AdminControllerTest in 4.335 seconds (process running for 10.059)
+2026-05-02 18:26:21.106 ERROR [user-service] [main] c.s.user.controller.AdminController - Failed to delete user from auth-service: auth down
+2026-05-02 18:26:21.160 WARN  [user-service] [main] o.s.d.w.c.SpringDataJacksonConfiguration$PageModule$WarningLoggingModifier - Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
+	For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
+	or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
+
+2026-05-02 18:26:21.272 WARN  [user-service] [main] c.s.user.controller.AdminController - Failed to fetch user count from auth-service: auth down
+2026-05-02 18:26:21.273 WARN  [user-service] [main] c.s.user.controller.AdminController - Failed to fetch session count from session-service: session down
+2026-05-02 18:26:21.313 INFO  [user-service] [main] c.s.user.controller.AdminController - Deleted mentor profile for userId: 1
+2026-05-02 18:26:21.334 ERROR [user-service] [main] c.s.user.controller.AdminController - Failed to fetch users from auth-service: auth down
+2026-05-02 18:26:21.495 INFO  [user-service] [main] c.s.u.controller.GroupControllerTest - Starting GroupControllerTest using Java 21.0.7 with PID 37564 (started by udaya in C:\Users\udaya\Downloads\SkillSync_FullStack\SkillSync-FullStack\Backend\user-service)
+2026-05-02 18:26:21.495 DEBUG [user-service] [main] c.s.u.controller.GroupControllerTest - Running with Spring Boot v3.4.4, Spring v6.2.5
+2026-05-02 18:26:21.495 INFO  [user-service] [main] c.s.u.controller.GroupControllerTest - No active profile set, falling back to 1 default profile: "default"
+2026-05-02 18:26:21.496 WARN  [user-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@34bdf0da uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:26:21.497 WARN  [user-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@5c73535b uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:26:21.497 WARN  [user-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@8880259 uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:26:21.859 INFO  [user-service] [main] c.s.u.controller.GroupControllerTest - Started GroupControllerTest in 0.487 seconds (process running for 10.895)
+2026-05-02 18:26:22.141 WARN  [user-service] [main] o.s.d.w.c.SpringDataJacksonConfiguration$PageModule$WarningLoggingModifier - Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
+	For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
+	or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
+
+2026-05-02 18:26:22.526 INFO  [user-service] [main] c.s.u.c.MentorControllerTest - Starting MentorControllerTest using Java 21.0.7 with PID 37564 (started by udaya in C:\Users\udaya\Downloads\SkillSync_FullStack\SkillSync-FullStack\Backend\user-service)
+2026-05-02 18:26:22.527 DEBUG [user-service] [main] c.s.u.c.MentorControllerTest - Running with Spring Boot v3.4.4, Spring v6.2.5
+2026-05-02 18:26:22.527 INFO  [user-service] [main] c.s.u.c.MentorControllerTest - No active profile set, falling back to 1 default profile: "default"
+2026-05-02 18:26:22.533 WARN  [user-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@5ab991ad uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:26:22.534 WARN  [user-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@26c700ff uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:26:22.534 WARN  [user-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@6d9c791 uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:26:22.785 INFO  [user-service] [main] c.s.u.c.MentorControllerTest - Started MentorControllerTest in 0.389 seconds (process running for 11.822)
+2026-05-02 18:26:22.798 WARN  [user-service] [main] o.s.d.w.c.SpringDataJacksonConfiguration$PageModule$WarningLoggingModifier - Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
+	For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
+	or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
+
+2026-05-02 18:26:23.052 INFO  [user-service] [main] c.s.u.controller.UserControllerTest - Starting UserControllerTest using Java 21.0.7 with PID 37564 (started by udaya in C:\Users\udaya\Downloads\SkillSync_FullStack\SkillSync-FullStack\Backend\user-service)
+2026-05-02 18:26:23.053 DEBUG [user-service] [main] c.s.u.controller.UserControllerTest - Running with Spring Boot v3.4.4, Spring v6.2.5
+2026-05-02 18:26:23.053 INFO  [user-service] [main] c.s.u.controller.UserControllerTest - No active profile set, falling back to 1 default profile: "default"
+2026-05-02 18:26:23.054 WARN  [user-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@77c5ba4 uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:26:23.054 WARN  [user-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@2e055d52 uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:26:23.054 WARN  [user-service] [main] o.s.c.c.c.ConfigServerConfigDataLoader - Could not locate PropertySource ([ConfigServerConfigDataResource@7c6edbd2 uris = array<String>['http://localhost:8888'], optional = true, profiles = 'default']): I/O error on GET request for "http://localhost:8888/application/default": Connection refused: getsockopt
+2026-05-02 18:26:23.357 INFO  [user-service] [main] c.s.u.controller.UserControllerTest - Started UserControllerTest in 0.403 seconds (process running for 12.393)
+2026-05-02 18:26:23.484 WARN  [user-service] [main] c.s.u.e.GlobalExceptionHandler - Missing request header: X-User-Id
+2026-05-02 18:26:23.493 WARN  [user-service] [main] c.s.u.e.GlobalExceptionHandler - Missing request header: X-User-Role
+2026-05-02 18:26:23.495 WARN  [user-service] [main] c.s.u.e.GlobalExceptionHandler - Resource not found: User not found
+2026-05-02 18:26:23.496 ERROR [user-service] [main] c.s.u.e.GlobalExceptionHandler - Unexpected error occurred
+java.lang.Exception: unexpected error
+	at com.skillsync.user.exception.GlobalExceptionHandlerTest.shouldHandleGenericException(GlobalExceptionHandlerTest.java:90)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:767)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescriptor.java:217)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:213)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:138)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:68)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-05-02 18:26:23.631 WARN  [user-service] [main] c.s.u.e.GlobalExceptionHandler - Validation failed: {name=too short, email=must not be blank}
+2026-05-02 18:26:23.633 ERROR [user-service] [main] c.s.u.e.GlobalExceptionHandler - Runtime exception: something went wrong
+2026-05-02 18:26:23.983 INFO  [user-service] [main] c.s.u.s.command.GroupCommandService - [CQRS:COMMAND] User 200 left group 1. Cache invalidated.
+2026-05-02 18:26:23.998 INFO  [user-service] [main] c.s.u.s.command.GroupCommandService - [CQRS:COMMAND] User 200 joined group 1. Cache invalidated.
+2026-05-02 18:26:24.076 INFO  [user-service] [main] c.s.u.s.command.GroupCommandService - [CQRS:COMMAND] Group created by userId: 100. Cache invalidated.
+2026-05-02 18:26:24.080 INFO  [user-service] [main] c.s.u.s.command.GroupCommandService - [CQRS:COMMAND] Group created by userId: 100. Cache invalidated.
+2026-05-02 18:26:24.323 INFO  [user-service] [main] c.s.u.s.command.MentorCommandService - [CQRS:COMMAND] Availability removed for mentorId 1. Cache invalidated.
+2026-05-02 18:26:24.334 WARN  [user-service] [main] c.s.u.s.command.MentorCommandService - [CQRS:COMMAND] Resolved mentor identifier 1 as userId for profile 1 during rating sync.
+2026-05-02 18:26:24.564 INFO  [user-service] [main] c.s.u.s.command.MentorCommandService - [CQRS:COMMAND] User 100 demoted to learner.
+2026-05-02 18:26:24.573 INFO  [user-service] [main] c.s.u.s.command.MentorCommandService - [CQRS:COMMAND] User 100 demoted to learner.
+2026-05-02 18:26:24.578 INFO  [user-service] [main] c.s.u.s.command.MentorCommandService - [CQRS:COMMAND] User 100 demoted to learner.
+2026-05-02 18:26:24.597 INFO  [user-service] [main] c.s.u.s.command.MentorCommandService - [CQRS:COMMAND] User 100 promoted to mentor.
+2026-05-02 18:26:24.604 INFO  [user-service] [main] c.s.u.s.command.MentorCommandService - [CQRS:COMMAND] User 100 promoted to mentor.
+2026-05-02 18:26:24.612 INFO  [user-service] [main] c.s.u.s.command.MentorCommandService - [CQRS:COMMAND] Mentor 1 rejected. Cache invalidated.
+2026-05-02 18:26:24.627 INFO  [user-service] [main] c.s.u.s.command.MentorCommandService - [CQRS:COMMAND] Mentor 1 approved. Cache invalidated.
+2026-05-02 18:26:24.640 INFO  [user-service] [main] c.s.u.s.command.MentorCommandService - [CQRS:COMMAND] Mentor application submitted (PENDING) for userId: 100. Awaiting admin approval.
+2026-05-02 18:26:24.660 INFO  [user-service] [main] c.s.u.s.command.MentorCommandService - [CQRS:COMMAND] Mentor application re-submitted (PENDING) for userId: 100
+2026-05-02 18:26:24.668 INFO  [user-service] [main] c.s.u.s.command.MentorCommandService - [CQRS:COMMAND] Mentor application re-submitted (PENDING) for userId: 100
+2026-05-02 18:26:24.807 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Skill 10 added for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.811 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Skill 10 removed for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.817 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Profile updated for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.818 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Profile updated for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.819 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Profile updated for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.819 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Profile updated for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.819 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Profile updated for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.822 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Profile updated for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.826 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Profile updated for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.832 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Profile updated for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.837 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Profile updated for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.842 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Profile updated for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.849 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Profile updated for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.855 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Profile updated for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.864 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Profile updated for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.866 INFO  [user-service] [main] c.s.u.s.command.UserCommandService - [CQRS:COMMAND] Profile updated for userId: 1. Cache invalidated.
+2026-05-02 18:26:24.974 WARN  [user-service] [main] c.s.u.s.query.MentorQueryService - Failed to resolve skill ids for search text 'java': Skill fail
+2026-05-02 18:26:24.983 WARN  [user-service] [main] c.s.u.s.query.MentorQueryService - Failed to enrich user details for mentor userId 1: Auth fail
+2026-05-02 18:26:24.984 WARN  [user-service] [main] c.s.u.s.query.MentorQueryService - Failed to enrich session metrics for mentor userId 1: Session fail
+2026-05-02 18:26:25.020 WARN  [user-service] [main] c.s.u.s.query.MentorQueryService - Failed to enrich user details for mentor userId 100: Auth fail
+2026-05-02 18:26:25.025 WARN  [user-service] [main] c.s.u.s.query.MentorQueryService - Failed to enrich session metrics for mentor userId 100: Session fail
+2026-05-02 18:26:25.036 WARN  [user-service] [main] c.s.u.s.query.MentorQueryService - Failed to enrich skill names for mentor userId 100: Skill fail
+2026-05-02 18:26:25.041 WARN  [user-service] [main] c.s.u.s.query.MentorQueryService - Failed to resolve skill ids for search text 'Java': Service Down
+2026-05-02 18:26:25.191 WARN  [user-service] [main] c.s.u.service.query.UserQueryService - Could not fetch skill 10: Feign Error

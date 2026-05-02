@@ -1,0 +1,14 @@
+com\skillsync\auth\controller\LoginControllerEdgeTest.class
+com\skillsync\auth\service\EmailServiceTest.class
+com\skillsync\auth\controller\AuthControllerTest.class
+com\skillsync\auth\service\LoginEdgeCaseTest.class
+com\skillsync\auth\config\SecurityConfigTest.class
+com\skillsync\auth\service\RegisterEdgeCaseTest.class
+com\skillsync\auth\service\AuthServiceTest.class
+com\skillsync\auth\security\JwtAuthenticationFilterTest.class
+com\skillsync\auth\controller\AuthCoverageTest.class
+com\skillsync\auth\security\JwtTokenProviderTest.class
+com\skillsync\auth\security\UserDetailsServiceImplTest.class
+com\skillsync\auth\service\OtpServiceTest.class
+com\skillsync\auth\exception\GlobalExceptionHandlerTest.class
+com\skillsync\auth\controller\RegisterControllerEdgeTest.class

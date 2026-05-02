@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>SessionController.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">skillsync-backend</a> &gt; <a href="../index.html" class="el_bundle">session-service</a> &gt; <a href="index.source.html" class="el_package">com.skillsync.session.controller</a> &gt; <span class="el_source">SessionController.java</span></div><h1>SessionController.java</h1><pre class="source lang-java linenums">package com.skillsync.session.controller;
+
+import com.skillsync.session.dto.*;
+import com.skillsync.session.enums.SessionStatus;
+import com.skillsync.session.service.command.SessionCommandService;
+import com.skillsync.session.service.query.SessionQueryService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/api/sessions&quot;)
+@RequiredArgsConstructor
+public class SessionController {
+
+    private final SessionCommandService sessionCommandService;
+    private final SessionQueryService sessionQueryService;
+
+    // ─── QUERIES ───
+
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;SessionResponse&gt; getSession(@PathVariable Long id) {
+<span class="fc" id="L29">        return ResponseEntity.ok(sessionQueryService.getSessionById(id));</span>
+    }
+
+    @GetMapping(&quot;/learner&quot;)
+    public ResponseEntity&lt;Page&lt;SessionResponse&gt;&gt; getLearnerSessions(
+            @RequestHeader(&quot;X-User-Id&quot;) Long userId,
+            @RequestParam(value = &quot;status&quot;, required = false) List&lt;SessionStatus&gt; statuses,
+            Pageable pageable) {
+<span class="nc" id="L37">        return ResponseEntity.ok(sessionQueryService.getSessionsByLearner(userId, statuses, pageable));</span>
+    }
+
+    @GetMapping(&quot;/mentor&quot;)
+    public ResponseEntity&lt;Page&lt;SessionResponse&gt;&gt; getMentorSessions(
+            @RequestHeader(&quot;X-User-Id&quot;) Long userId,
+            @RequestParam(value = &quot;status&quot;, required = false) List&lt;SessionStatus&gt; statuses,
+            Pageable pageable) {
+<span class="nc" id="L45">        return ResponseEntity.ok(sessionQueryService.getSessionsByMentor(userId, statuses, pageable));</span>
+    }
+
+    @GetMapping(&quot;/public/mentor/{mentorId}/booked&quot;)
+    public ResponseEntity&lt;java.util.List&lt;SessionResponse&gt;&gt; getBookedSessionsForMentor(@PathVariable Long mentorId) {
+<span class="nc" id="L50">        return ResponseEntity.ok(sessionQueryService.getActiveSessionsForMentor(mentorId));</span>
+    }
+
+    // ─── COMMANDS ───
+
+    @GetMapping(&quot;/count&quot;)
+    public ResponseEntity&lt;Long&gt; getSessionCount() {
+<span class="nc" id="L57">        return ResponseEntity.ok(sessionQueryService.getSessionCount());</span>
+    }
+
+    @GetMapping(&quot;/mentor/{mentorId}/metrics&quot;)
+    public ResponseEntity&lt;MentorMetricsResponse&gt; getMentorMetrics(@PathVariable Long mentorId) {
+<span class="nc" id="L62">        return ResponseEntity.ok(sessionQueryService.getMentorMetrics(mentorId));</span>
+    }
+
+
+    @PostMapping
+    public ResponseEntity&lt;SessionResponse&gt; createSession(
+            @RequestHeader(&quot;X-User-Id&quot;) Long userId,
+            @Valid @RequestBody CreateSessionRequest request) {
+<span class="nc" id="L70">        return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="nc" id="L71">                .body(sessionCommandService.createSession(userId, request));</span>
+    }
+
+    @PutMapping(&quot;/{id}/accept&quot;)
+    public ResponseEntity&lt;SessionResponse&gt; acceptSession(
+            @PathVariable Long id, @RequestHeader(&quot;X-User-Id&quot;) Long userId) {
+<span class="nc" id="L77">        return ResponseEntity.ok(sessionCommandService.acceptSession(id, userId));</span>
+    }
+
+    @PutMapping(&quot;/{id}/reject&quot;)
+    public ResponseEntity&lt;SessionResponse&gt; rejectSession(
+            @PathVariable Long id, @RequestHeader(&quot;X-User-Id&quot;) Long userId,
+            @RequestParam(required = false) String reason) {
+<span class="nc" id="L84">        return ResponseEntity.ok(sessionCommandService.rejectSession(id, userId, reason));</span>
+    }
+
+    @PutMapping(&quot;/{id}/cancel&quot;)
+    public ResponseEntity&lt;SessionResponse&gt; cancelSession(
+            @PathVariable Long id, @RequestHeader(&quot;X-User-Id&quot;) Long userId) {
+<span class="nc" id="L90">        return ResponseEntity.ok(sessionCommandService.cancelSession(id, userId));</span>
+    }
+
+    @PutMapping(&quot;/{id}/complete&quot;)
+    public ResponseEntity&lt;SessionResponse&gt; completeSession(
+            @PathVariable Long id, @RequestHeader(&quot;X-User-Id&quot;) Long userId) {
+<span class="nc" id="L96">        return ResponseEntity.ok(sessionCommandService.completeSession(id, userId));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

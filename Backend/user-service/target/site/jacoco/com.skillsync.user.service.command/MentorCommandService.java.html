@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MentorCommandService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">user-service</a> &gt; <a href="index.source.html" class="el_package">com.skillsync.user.service.command</a> &gt; <span class="el_source">MentorCommandService.java</span></div><h1>MentorCommandService.java</h1><pre class="source lang-java linenums">package com.skillsync.user.service.command;
+
+import com.skillsync.cache.CacheService;
+import com.skillsync.user.config.RabbitMQConfig;
+import com.skillsync.user.dto.*;
+import com.skillsync.user.entity.AvailabilitySlot;
+import com.skillsync.user.entity.MentorProfile;
+import com.skillsync.user.entity.MentorSkill;
+import com.skillsync.user.enums.MentorStatus;
+import com.skillsync.user.event.MentorApprovedEvent;
+import com.skillsync.user.event.MentorRejectedEvent;
+import com.skillsync.user.feign.AuthServiceClient;
+import com.skillsync.user.mapper.MentorMapper;
+import com.skillsync.user.repository.AvailabilitySlotRepository;
+import com.skillsync.user.repository.MentorProfileRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+/**
+ * CQRS Command Service for Mentor operations.
+ * Handles all write operations and cache invalidation.
+ */
+@Service
+@RequiredArgsConstructor
+<span class="fc" id="L34">@Slf4j</span>
+public class MentorCommandService {
+
+    private final MentorProfileRepository mentorProfileRepository;
+    private final AvailabilitySlotRepository availabilitySlotRepository;
+    private final AuthServiceClient authServiceClient;
+    private final RabbitTemplate rabbitTemplate;
+    private final CacheService cacheService;
+
+    @Transactional
+    public MentorProfileResponse apply(Long userId, MentorApplicationRequest request) {
+<span class="fc" id="L45">                Optional&lt;MentorProfile&gt; existingProfile = mentorProfileRepository.findByUserId(userId);</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">                if (existingProfile.isPresent()) {</span>
+<span class="fc" id="L47">                        MentorProfile profile = existingProfile.get();</span>
+
+<span class="fc bfc" id="L49" title="All 2 branches covered.">                        if (profile.getStatus() == MentorStatus.PENDING) {</span>
+<span class="fc" id="L50">                                throw new RuntimeException(&quot;Mentor application is already pending review&quot;);</span>
+                        }
+
+<span class="fc bfc" id="L53" title="All 2 branches covered.">                        if (profile.getStatus() == MentorStatus.APPROVED) {</span>
+<span class="fc" id="L54">                                throw new RuntimeException(&quot;User is already an approved mentor&quot;);</span>
+                        }
+
+<span class="fc" id="L57">                        profile.setBio(request.bio());</span>
+<span class="fc" id="L58">                        profile.setExperienceYears(request.experienceYears());</span>
+<span class="fc" id="L59">                        profile.setHourlyRate(request.hourlyRate());</span>
+<span class="fc" id="L60">                        profile.setStatus(MentorStatus.PENDING);</span>
+<span class="fc" id="L61">                        profile.setRejectionReason(null);</span>
+
+<span class="fc bfc" id="L63" title="All 2 branches covered.">                        if (profile.getSkills() == null) {</span>
+<span class="fc" id="L64">                                profile.setSkills(new ArrayList&lt;&gt;());</span>
+                        } else {
+<span class="fc" id="L66">                                profile.getSkills().clear();</span>
+                        }
+
+<span class="fc bfc" id="L69" title="All 2 branches covered.">                        for (Long skillId : request.skillIds()) {</span>
+<span class="fc" id="L70">                                MentorSkill skill = MentorSkill.builder()</span>
+<span class="fc" id="L71">                                                .mentor(profile).skillId(skillId).build();</span>
+<span class="fc" id="L72">                                profile.getSkills().add(skill);</span>
+<span class="fc" id="L73">                        }</span>
+
+<span class="fc" id="L75">                        profile = mentorProfileRepository.save(profile);</span>
+<span class="fc" id="L76">                        cacheService.evictByPattern(CacheService.vKey(&quot;user:mentor:pending:*&quot;));</span>
+<span class="fc" id="L77">                        invalidateMentorCaches(profile.getId(), profile.getUserId());</span>
+<span class="fc" id="L78">                        log.info(&quot;[CQRS:COMMAND] Mentor application re-submitted (PENDING) for userId: {}&quot;, userId);</span>
+<span class="fc" id="L79">                        return MentorMapper.toResponse(profile);</span>
+        }
+
+<span class="fc" id="L82">        MentorProfile profile = MentorProfile.builder()</span>
+<span class="fc" id="L83">                .userId(userId).bio(request.bio())</span>
+<span class="fc" id="L84">                .experienceYears(request.experienceYears())</span>
+<span class="fc" id="L85">                .hourlyRate(request.hourlyRate())</span>
+<span class="fc" id="L86">                .avgRating(0.0).totalReviews(0).totalSessions(0)</span>
+<span class="fc" id="L87">                .status(MentorStatus.PENDING)</span>
+<span class="fc" id="L88">                .skills(new ArrayList&lt;&gt;()).slots(new ArrayList&lt;&gt;())</span>
+<span class="fc" id="L89">                .build();</span>
+
+<span class="fc" id="L91">        profile = mentorProfileRepository.save(profile);</span>
+
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        for (Long skillId : request.skillIds()) {</span>
+<span class="fc" id="L94">            MentorSkill skill = MentorSkill.builder()</span>
+<span class="fc" id="L95">                    .mentor(profile).skillId(skillId).build();</span>
+<span class="fc" id="L96">            profile.getSkills().add(skill);</span>
+<span class="fc" id="L97">        }</span>
+<span class="fc" id="L98">        profile = mentorProfileRepository.save(profile);</span>
+
+        // Do NOT auto-approve or update role here.
+        // The admin will approve via AdminController -&gt; approveMentor()
+        // which updates status to APPROVED and changes the user's role.
+
+<span class="fc" id="L104">        cacheService.evictByPattern(CacheService.vKey(&quot;user:mentor:pending:*&quot;));</span>
+<span class="fc" id="L105">        invalidateMentorCaches(profile.getId(), profile.getUserId());</span>
+<span class="fc" id="L106">        log.info(&quot;[CQRS:COMMAND] Mentor application submitted (PENDING) for userId: {}. Awaiting admin approval.&quot;, userId);</span>
+<span class="fc" id="L107">        return MentorMapper.toResponse(profile);</span>
+    }
+
+    @Transactional
+    public void approveMentor(Long mentorId) {
+<span class="fc" id="L112">        MentorProfile profile = mentorProfileRepository.findById(mentorId)</span>
+<span class="fc" id="L113">                .orElseThrow(() -&gt; new RuntimeException(&quot;Mentor not found: &quot; + mentorId));</span>
+
+<span class="fc" id="L115">        profile.setStatus(MentorStatus.APPROVED);</span>
+<span class="fc" id="L116">        profile.setRejectionReason(null);</span>
+<span class="fc" id="L117">        mentorProfileRepository.save(profile);</span>
+
+        // If this fails, it MUST throw an exception to trigger a @Transactional rollback.
+        // We cannot allow the profile to be APPROVED if the role update fails, 
+        // as that destroys data consistency.
+<span class="fc" id="L122">        authServiceClient.updateUserRole(profile.getUserId(), &quot;ROLE_MENTOR&quot;);</span>
+
+<span class="fc" id="L124">        rabbitTemplate.convertAndSend(RabbitMQConfig.MENTOR_EXCHANGE, &quot;mentor.approved&quot;,</span>
+<span class="fc" id="L125">                new MentorApprovedEvent(mentorId, profile.getUserId(), null));</span>
+
+        // Invalidate caches
+<span class="fc" id="L128">        invalidateMentorCaches(mentorId, profile.getUserId());</span>
+<span class="fc" id="L129">        log.info(&quot;[CQRS:COMMAND] Mentor {} approved. Cache invalidated.&quot;, mentorId);</span>
+<span class="fc" id="L130">    }</span>
+
+    @Transactional
+    public void rejectMentor(Long mentorId, String reason) {
+<span class="fc" id="L134">        MentorProfile profile = mentorProfileRepository.findById(mentorId)</span>
+<span class="pc" id="L135">                .orElseThrow(() -&gt; new RuntimeException(&quot;Mentor not found: &quot; + mentorId));</span>
+
+<span class="fc" id="L137">        profile.setStatus(MentorStatus.REJECTED);</span>
+<span class="fc" id="L138">        profile.setRejectionReason(reason);</span>
+<span class="fc" id="L139">        mentorProfileRepository.save(profile);</span>
+
+<span class="fc" id="L141">        rabbitTemplate.convertAndSend(RabbitMQConfig.MENTOR_EXCHANGE, &quot;mentor.rejected&quot;,</span>
+<span class="fc" id="L142">                new MentorRejectedEvent(mentorId, profile.getUserId(), reason));</span>
+
+<span class="fc" id="L144">        invalidateMentorCaches(mentorId, profile.getUserId());</span>
+<span class="fc" id="L145">        log.info(&quot;[CQRS:COMMAND] Mentor {} rejected. Cache invalidated.&quot;, mentorId);</span>
+<span class="fc" id="L146">    }</span>
+
+        @Transactional
+        public void promoteUserToMentor(Long userId) {
+<span class="fc" id="L150">                MentorProfile profile = mentorProfileRepository.findByUserId(userId)</span>
+<span class="fc" id="L151">                                .map(existing -&gt; {</span>
+<span class="fc" id="L152">                                        existing.setStatus(MentorStatus.APPROVED);</span>
+<span class="fc" id="L153">                                        existing.setRejectionReason(null);</span>
+<span class="fc" id="L154">                                        return existing;</span>
+                                })
+<span class="fc" id="L156">                                .orElseGet(() -&gt; MentorProfile.builder()</span>
+<span class="fc" id="L157">                                                .userId(userId)</span>
+<span class="fc" id="L158">                                                .bio(&quot;&quot;)</span>
+<span class="fc" id="L159">                                                .experienceYears(0)</span>
+<span class="fc" id="L160">                                                .hourlyRate(java.math.BigDecimal.ZERO)</span>
+<span class="fc" id="L161">                                                .avgRating(0.0)</span>
+<span class="fc" id="L162">                                                .totalReviews(0)</span>
+<span class="fc" id="L163">                                                .totalSessions(0)</span>
+<span class="fc" id="L164">                                                .status(MentorStatus.APPROVED)</span>
+<span class="fc" id="L165">                                                .skills(new ArrayList&lt;&gt;())</span>
+<span class="fc" id="L166">                                                .slots(new ArrayList&lt;&gt;())</span>
+<span class="fc" id="L167">                                                .build());</span>
+
+<span class="fc" id="L169">                profile = mentorProfileRepository.save(profile);</span>
+<span class="fc" id="L170">                authServiceClient.updateUserRole(userId, &quot;ROLE_MENTOR&quot;);</span>
+
+<span class="fc" id="L172">                Map&lt;String, Object&gt; event = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L173">                event.put(&quot;mentorId&quot;, profile.getId());</span>
+<span class="fc" id="L174">                event.put(&quot;userId&quot;, userId);</span>
+<span class="fc" id="L175">                event.put(&quot;source&quot;, &quot;admin&quot;);</span>
+<span class="fc" id="L176">                rabbitTemplate.convertAndSend(RabbitMQConfig.MENTOR_EXCHANGE, &quot;mentor.promoted&quot;, event);</span>
+
+<span class="fc" id="L178">                invalidateMentorCaches(profile.getId(), profile.getUserId());</span>
+<span class="fc" id="L179">                log.info(&quot;[CQRS:COMMAND] User {} promoted to mentor.&quot;, userId);</span>
+<span class="fc" id="L180">        }</span>
+
+        @Transactional
+        public void demoteUserToLearner(Long userId, String reason) {
+<span class="fc" id="L184">                Optional&lt;MentorProfile&gt; profileOptional = mentorProfileRepository.findByUserId(userId);</span>
+<span class="fc" id="L185">                profileOptional.ifPresent(profile -&gt; {</span>
+<span class="fc" id="L186">                        profile.setStatus(MentorStatus.SUSPENDED);</span>
+<span class="fc" id="L187">                        profile.setRejectionReason(reason);</span>
+<span class="fc" id="L188">                        mentorProfileRepository.save(profile);</span>
+<span class="fc" id="L189">                        invalidateMentorCaches(profile.getId(), profile.getUserId());</span>
+<span class="fc" id="L190">                });</span>
+
+<span class="fc" id="L192">                authServiceClient.updateUserRole(userId, &quot;ROLE_LEARNER&quot;);</span>
+
+<span class="fc" id="L194">                Map&lt;String, Object&gt; event = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L195">                profileOptional.ifPresent(profile -&gt; event.put(&quot;mentorId&quot;, profile.getId()));</span>
+<span class="fc" id="L196">                event.put(&quot;userId&quot;, userId);</span>
+<span class="fc bfc" id="L197" title="All 4 branches covered.">                event.put(&quot;reason&quot;, (reason == null || reason.isBlank()) ? &quot;Role changed to learner by admin&quot; : reason);</span>
+<span class="fc" id="L198">                event.put(&quot;source&quot;, &quot;admin&quot;);</span>
+<span class="fc" id="L199">                rabbitTemplate.convertAndSend(RabbitMQConfig.MENTOR_EXCHANGE, &quot;mentor.demoted&quot;, event);</span>
+
+<span class="fc" id="L201">                cacheService.evictByPattern(CacheService.vKey(&quot;user:mentor:search:*&quot;));</span>
+<span class="fc" id="L202">                cacheService.evictByPattern(CacheService.vKey(&quot;user:mentor:pending:*&quot;));</span>
+<span class="fc" id="L203">                log.info(&quot;[CQRS:COMMAND] User {} demoted to learner.&quot;, userId);</span>
+<span class="fc" id="L204">        }</span>
+
+
+
+    @Transactional
+    public AvailabilitySlotResponse addAvailability(Long userId, AvailabilitySlotRequest request) {
+<span class="fc" id="L210">        MentorProfile profile = mentorProfileRepository.findByUserId(userId)</span>
+<span class="pc" id="L211">                .orElseThrow(() -&gt; new RuntimeException(&quot;Mentor profile not found&quot;));</span>
+
+<span class="fc bfc" id="L213" title="All 2 branches covered.">                if (!request.startTime().isBefore(request.endTime())) {</span>
+<span class="fc" id="L214">                        throw new RuntimeException(&quot;End time must be after start time&quot;);</span>
+                }
+
+<span class="fc" id="L217">                long slotDurationMinutes = Duration.between(request.startTime(), request.endTime()).toMinutes();</span>
+<span class="fc bfc" id="L218" title="All 4 branches covered.">                if (slotDurationMinutes &lt; 30 || slotDurationMinutes &gt; 120) {</span>
+<span class="fc" id="L219">                        throw new RuntimeException(&quot;Slot duration must be between 30 and 120 minutes&quot;);</span>
+                }
+
+<span class="fc" id="L222">                boolean alreadyExists = availabilitySlotRepository.existsByMentor_IdAndDayOfWeekAndStartTimeAndEndTime(</span>
+<span class="fc" id="L223">                                profile.getId(),</span>
+<span class="fc" id="L224">                                request.dayOfWeek(),</span>
+<span class="fc" id="L225">                                request.startTime(),</span>
+<span class="fc" id="L226">                                request.endTime()</span>
+                );
+<span class="fc bfc" id="L228" title="All 2 branches covered.">                if (alreadyExists) {</span>
+<span class="fc" id="L229">                        throw new RuntimeException(&quot;Slot already exists&quot;);</span>
+                }
+
+<span class="fc" id="L232">        AvailabilitySlot slot = AvailabilitySlot.builder()</span>
+<span class="fc" id="L233">                .mentor(profile).dayOfWeek(request.dayOfWeek())</span>
+<span class="fc" id="L234">                .startTime(request.startTime()).endTime(request.endTime())</span>
+<span class="fc" id="L235">                .isActive(true).build();</span>
+<span class="fc" id="L236">        slot = availabilitySlotRepository.save(slot);</span>
+
+<span class="fc" id="L238">        invalidateMentorCaches(profile.getId(), userId);</span>
+<span class="fc" id="L239">        return new AvailabilitySlotResponse(slot.getId(), slot.getDayOfWeek(),</span>
+<span class="fc" id="L240">                slot.getStartTime(), slot.getEndTime(), slot.isActive());</span>
+    }
+
+    @Transactional
+    public void removeAvailability(Long slotId) {
+<span class="fc" id="L245">        AvailabilitySlot slot = availabilitySlotRepository.findById(slotId)</span>
+<span class="pc" id="L246">                .orElseThrow(() -&gt; new RuntimeException(&quot;Slot not found&quot;));</span>
+<span class="fc" id="L247">        MentorProfile profile = slot.getMentor();</span>
+
+<span class="fc" id="L249">        availabilitySlotRepository.delete(slot);</span>
+
+<span class="fc" id="L251">        invalidateMentorCaches(profile.getId(), profile.getUserId());</span>
+<span class="fc" id="L252">        log.info(&quot;[CQRS:COMMAND] Availability removed for mentorId {}. Cache invalidated.&quot;, profile.getId());</span>
+<span class="fc" id="L253">    }</span>
+
+    @Transactional
+    public void updateAvgRating(Long mentorId, double avgRating, int totalReviews) {
+<span class="nc" id="L257">                updateMentorMetrics(mentorId, avgRating, totalReviews, null);</span>
+<span class="nc" id="L258">        }</span>
+
+        @Transactional
+        public void updateMentorMetrics(Long mentorId, double avgRating, int totalReviews, Long totalSessions) {
+<span class="fc" id="L262">        Optional&lt;MentorProfile&gt; profileById = mentorProfileRepository.findById(mentorId);</span>
+<span class="fc" id="L263">        MentorProfile profile = profileById.orElseGet(() -&gt; mentorProfileRepository.findByUserId(mentorId)</span>
+<span class="fc" id="L264">                .orElseThrow(() -&gt; new RuntimeException(&quot;Mentor not found for identifier: &quot; + mentorId)));</span>
+
+<span class="fc bfc" id="L266" title="All 2 branches covered.">        if (profileById.isEmpty()) {</span>
+<span class="fc" id="L267">            log.warn(&quot;[CQRS:COMMAND] Resolved mentor identifier {} as userId for profile {} during rating sync.&quot;,</span>
+<span class="fc" id="L268">                    mentorId, profile.getId());</span>
+        }
+
+<span class="fc" id="L271">        profile.setAvgRating(avgRating);</span>
+<span class="fc" id="L272">        profile.setTotalReviews(totalReviews);</span>
+<span class="fc bfc" id="L273" title="All 2 branches covered.">                if (totalSessions != null) {</span>
+<span class="fc" id="L274">                        profile.setTotalSessions(Math.toIntExact(totalSessions));</span>
+                }
+<span class="fc" id="L276">        mentorProfileRepository.save(profile);</span>
+
+<span class="fc" id="L278">        invalidateMentorCaches(profile.getId(), profile.getUserId());</span>
+<span class="fc" id="L279">    }</span>
+
+    private void invalidateMentorCaches(Long mentorId, Long userId) {
+<span class="fc" id="L282">        cacheService.evict(CacheService.vKey(&quot;user:mentor:&quot; + mentorId));</span>
+<span class="fc" id="L283">        cacheService.evict(CacheService.vKey(&quot;user:mentor:user:&quot; + userId));</span>
+<span class="fc" id="L284">        cacheService.evictByPattern(CacheService.vKey(&quot;user:mentor:search:*&quot;));</span>
+<span class="fc" id="L285">        cacheService.evictByPattern(CacheService.vKey(&quot;user:mentor:pending:*&quot;));</span>
+<span class="fc" id="L286">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

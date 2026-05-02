@@ -1,0 +1,96 @@
+2026-05-02 18:25:54.410 INFO  [skill-service] [main] c.s.s.controller.SkillControllerTest - Starting SkillControllerTest using Java 21.0.7 with PID 19752 (started by udaya in C:\Users\udaya\Downloads\SkillSync_FullStack\SkillSync-FullStack\Backend\skill-service)
+2026-05-02 18:25:54.413 DEBUG [skill-service] [main] c.s.s.controller.SkillControllerTest - Running with Spring Boot v3.4.4, Spring v6.2.5
+2026-05-02 18:25:54.415 INFO  [skill-service] [main] c.s.s.controller.SkillControllerTest - No active profile set, falling back to 1 default profile: "default"
+2026-05-02 18:25:58.451 INFO  [skill-service] [main] c.s.s.controller.SkillControllerTest - Started SkillControllerTest in 5.3 seconds (process running for 7.857)
+2026-05-02 18:25:59.052 WARN  [skill-service] [main] c.s.s.e.GlobalExceptionHandler - Validation failed: {name=must not be blank}
+2026-05-02 18:25:59.270 WARN  [skill-service] [main] o.s.d.w.c.SpringDataJacksonConfiguration$PageModule$WarningLoggingModifier - Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
+	For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
+	or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
+
+2026-05-02 18:25:59.352 WARN  [skill-service] [main] c.s.s.e.GlobalExceptionHandler - Resource not found: Skill missing
+2026-05-02 18:25:59.357 ERROR [skill-service] [main] c.s.s.e.GlobalExceptionHandler - Unexpected error occurred
+java.lang.Exception: boom
+	at com.skillsync.skill.exception.GlobalExceptionHandlerTest.handleGenericException_shouldReturn500(GlobalExceptionHandlerTest.java:74)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:767)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescriptor.java:217)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:213)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:138)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:68)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2026-05-02 18:25:59.365 ERROR [skill-service] [main] c.s.s.e.GlobalExceptionHandler - Runtime exception: Invalid state
+2026-05-02 18:25:59.732 WARN  [skill-service] [main] c.s.s.e.GlobalExceptionHandler - Validation failed: {name=must not be blank, category=must not be null}
+2026-05-02 18:25:59.864 INFO  [skill-service] [main] c.s.s.repository.SkillRepositoryTest - Starting SkillRepositoryTest using Java 21.0.7 with PID 19752 (started by udaya in C:\Users\udaya\Downloads\SkillSync_FullStack\SkillSync-FullStack\Backend\skill-service)
+2026-05-02 18:25:59.865 DEBUG [skill-service] [main] c.s.s.repository.SkillRepositoryTest - Running with Spring Boot v3.4.4, Spring v6.2.5
+2026-05-02 18:25:59.865 INFO  [skill-service] [main] c.s.s.repository.SkillRepositoryTest - No active profile set, falling back to 1 default profile: "default"
+2026-05-02 18:26:05.532 INFO  [skill-service] [main] c.s.s.repository.SkillRepositoryTest - Started SkillRepositoryTest in 5.743 seconds (process running for 14.938)
+2026-05-02 18:26:06.467 INFO  [skill-service] [main] c.s.s.s.command.SkillCommandService - [EVENT] Published CREATED event for skill: 2
+2026-05-02 18:26:06.467 INFO  [skill-service] [main] c.s.s.s.command.SkillCommandService - [CQRS:COMMAND] Skill created: 2. Cache invalidated.
+2026-05-02 18:26:06.508 INFO  [skill-service] [main] c.s.s.s.command.SkillCommandService - [EVENT] Published DEACTIVATED event for skill: 1
+2026-05-02 18:26:06.508 INFO  [skill-service] [main] c.s.s.s.command.SkillCommandService - [CQRS:COMMAND] Skill deactivated: 1. Cache invalidated.
+2026-05-02 18:26:06.515 INFO  [skill-service] [main] c.s.s.s.command.SkillCommandService - [EVENT] Published UPDATED event for skill: 1
+2026-05-02 18:26:06.516 INFO  [skill-service] [main] c.s.s.s.command.SkillCommandService - [CQRS:COMMAND] Skill updated: 1. Cache invalidated.
+2026-05-02 18:26:06.541 ERROR [skill-service] [main] c.s.s.s.command.SkillCommandService - [EVENT] Failed to publish skill event: down
+2026-05-02 18:26:06.543 INFO  [skill-service] [main] c.s.s.s.command.SkillCommandService - [CQRS:COMMAND] Skill created: 3. Cache invalidated.

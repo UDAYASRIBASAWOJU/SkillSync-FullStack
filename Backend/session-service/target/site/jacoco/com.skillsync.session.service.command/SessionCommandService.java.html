@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SessionCommandService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">session-service</a> &gt; <a href="index.source.html" class="el_package">com.skillsync.session.service.command</a> &gt; <span class="el_source">SessionCommandService.java</span></div><h1>SessionCommandService.java</h1><pre class="source lang-java linenums">package com.skillsync.session.service.command;
+
+import com.skillsync.cache.CacheService;
+import com.skillsync.session.config.RabbitMQConfig;
+import com.skillsync.session.dto.*;
+import com.skillsync.session.entity.Session;
+import com.skillsync.session.enums.SessionStatus;
+import com.skillsync.session.event.SessionEvent;
+import com.skillsync.session.feign.AuthServiceClient;
+import com.skillsync.session.feign.MentorProfileClient;
+import com.skillsync.session.mapper.SessionMapper;
+import com.skillsync.session.repository.SessionRepository;
+import com.skillsync.session.service.MentorMetricsService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * CQRS Command Service for Session operations.
+ * Handles all write operations, cache invalidation, and event publishing.
+ */
+@Service
+@RequiredArgsConstructor
+<span class="fc" id="L29">@Slf4j</span>
+public class SessionCommandService {
+
+    private final SessionRepository sessionRepository;
+    private final RabbitTemplate rabbitTemplate;
+    private final CacheService cacheService;
+    private final AuthServiceClient authServiceClient;
+    private final MentorProfileClient mentorProfileClient;
+    private final MentorMetricsService mentorMetricsService;
+
+    @Transactional
+    public SessionResponse createSession(Long learnerId, CreateSessionRequest request) {
+<span class="fc" id="L41">        Long mentorUserId = resolveMentorUserId(request.mentorId());</span>
+
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        if (learnerId.equals(mentorUserId)) {</span>
+<span class="fc" id="L44">            throw new RuntimeException(&quot;Cannot book a session with yourself&quot;);</span>
+        }
+
+<span class="fc" id="L47">        boolean duplicateSlotAlreadyBooked = sessionRepository.existsByMentorIdAndLearnerIdAndSessionDateAndStatusIn(</span>
+                mentorUserId,
+                learnerId,
+<span class="fc" id="L50">                request.sessionDate(),</span>
+<span class="fc" id="L51">                List.of(SessionStatus.REQUESTED, SessionStatus.ACCEPTED)</span>
+        );
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (duplicateSlotAlreadyBooked) {</span>
+<span class="fc" id="L54">            throw new RuntimeException(&quot;Session already booked for this slot&quot;);</span>
+        }
+
+
+<span class="fc" id="L58">        Session session = Session.builder()</span>
+<span class="fc" id="L59">                .mentorId(mentorUserId).learnerId(learnerId)</span>
+<span class="fc" id="L60">                .topic(request.topic()).description(request.description())</span>
+<span class="fc" id="L61">                .sessionDate(request.sessionDate()).durationMinutes(request.durationMinutes())</span>
+<span class="fc" id="L62">            .defaultRatingApplied(false)</span>
+<span class="fc" id="L63">                .status(SessionStatus.REQUESTED).build();</span>
+<span class="fc" id="L64">        session = sessionRepository.save(session);</span>
+
+        // Invalidate user session caches
+<span class="fc" id="L67">        invalidateSessionCaches(session);</span>
+
+        // Notify mentor and learner that the request has been created.
+<span class="fc" id="L70">        publishEvent(session, &quot;session.requested&quot;);</span>
+
+<span class="fc" id="L72">        log.info(&quot;[CQRS:COMMAND] Session {} created in REQUESTED state (awaiting payment confirmation). Cache invalidated.&quot;,</span>
+<span class="fc" id="L73">            session.getId());</span>
+<span class="fc" id="L74">        return SessionMapper.toResponse(session);</span>
+    }
+
+    @Transactional
+    public SessionResponse acceptSession(Long sessionId, Long mentorId) {
+<span class="fc" id="L79">        Session session = getAndValidateOwnership(sessionId, mentorId, true);</span>
+<span class="fc" id="L80">        validateTransition(session, SessionStatus.ACCEPTED);</span>
+<span class="fc" id="L81">        session.setStatus(SessionStatus.ACCEPTED);</span>
+<span class="fc" id="L82">        session = sessionRepository.save(session);</span>
+
+<span class="fc" id="L84">        invalidateSessionCaches(session);</span>
+<span class="fc" id="L85">        publishEvent(session, &quot;session.accepted&quot;);</span>
+<span class="fc" id="L86">        return SessionMapper.toResponse(session);</span>
+    }
+
+    @Transactional
+    public void confirmSessionPayment(Long sessionId) {
+<span class="fc" id="L91">        Session session = sessionRepository.findById(sessionId)</span>
+<span class="fc" id="L92">                .orElseThrow(() -&gt; new RuntimeException(&quot;Session not found: &quot; + sessionId));</span>
+        // Transition to ACCEPTED automatically on payment success
+<span class="fc" id="L94">        validateTransition(session, SessionStatus.ACCEPTED);</span>
+<span class="fc" id="L95">        session.setStatus(SessionStatus.ACCEPTED);</span>
+        // Optionally generate a meeting link here
+<span class="fc" id="L97">        session.setMeetingLink(&quot;https://meet.jit.si/SkillSync-&quot; + session.getId() + &quot;-&quot; + System.currentTimeMillis());</span>
+<span class="fc" id="L98">        session = sessionRepository.save(session);</span>
+
+<span class="fc" id="L100">        invalidateSessionCaches(session);</span>
+        // Publish event to notify learner and mentor (notification service listens to session.accepted)
+<span class="fc" id="L102">        publishEvent(session, &quot;session.accepted&quot;);</span>
+<span class="fc" id="L103">    }</span>
+
+    @Transactional
+    public SessionResponse rejectSession(Long sessionId, Long mentorId, String reason) {
+<span class="fc" id="L107">        Session session = getAndValidateOwnership(sessionId, mentorId, true);</span>
+<span class="fc" id="L108">        validateTransition(session, SessionStatus.REJECTED);</span>
+<span class="fc" id="L109">        session.setStatus(SessionStatus.REJECTED);</span>
+<span class="fc" id="L110">        session.setCancelReason(reason);</span>
+<span class="fc" id="L111">        session = sessionRepository.save(session);</span>
+
+<span class="fc" id="L113">        invalidateSessionCaches(session);</span>
+<span class="fc" id="L114">        publishEvent(session, &quot;session.rejected&quot;);</span>
+<span class="fc" id="L115">        return SessionMapper.toResponse(session);</span>
+    }
+
+    @Transactional
+    public SessionResponse cancelSession(Long sessionId, Long userId) {
+<span class="fc" id="L120">        Session session = sessionRepository.findById(sessionId)</span>
+<span class="pc" id="L121">                .orElseThrow(() -&gt; new RuntimeException(&quot;Session not found: &quot; + sessionId));</span>
+<span class="fc bfc" id="L122" title="All 4 branches covered.">        if (!session.getMentorId().equals(userId) &amp;&amp; !session.getLearnerId().equals(userId)) {</span>
+<span class="fc" id="L123">            throw new RuntimeException(&quot;Not authorized to cancel this session&quot;);</span>
+        }
+<span class="fc" id="L125">        validateTransition(session, SessionStatus.CANCELLED);</span>
+<span class="fc" id="L126">        session.setStatus(SessionStatus.CANCELLED);</span>
+<span class="fc" id="L127">        session = sessionRepository.save(session);</span>
+
+<span class="fc" id="L129">        invalidateSessionCaches(session);</span>
+<span class="fc" id="L130">        publishEvent(session, &quot;session.cancelled&quot;);</span>
+<span class="fc" id="L131">        return SessionMapper.toResponse(session);</span>
+    }
+
+    @Transactional
+    public SessionResponse completeSession(Long sessionId, Long mentorId) {
+<span class="fc" id="L136">        Session session = getAndValidateOwnership(sessionId, mentorId, true);</span>
+<span class="fc" id="L137">        validateTransition(session, SessionStatus.COMPLETED);</span>
+<span class="fc" id="L138">        session.setStatus(SessionStatus.COMPLETED);</span>
+<span class="fc" id="L139">        session.setDefaultRatingApplied(true);</span>
+<span class="fc" id="L140">        session = sessionRepository.save(session);</span>
+
+<span class="fc" id="L142">        invalidateSessionCaches(session);</span>
+<span class="fc" id="L143">        publishEvent(session, &quot;session.completed&quot;);</span>
+<span class="fc" id="L144">        publishMentorMetricsUpdate(session.getMentorId());</span>
+<span class="fc" id="L145">        return SessionMapper.toResponse(session);</span>
+    }
+
+    @Transactional
+    public void rollbackSessionPayment(Long sessionId, Long userId, String reason) {
+<span class="fc" id="L150">        Session session = sessionRepository.findById(sessionId)</span>
+<span class="pc" id="L151">                .orElseThrow(() -&gt; new RuntimeException(&quot;Session not found: &quot; + sessionId));</span>
+
+<span class="fc bfc" id="L153" title="All 4 branches covered.">        if (userId != null &amp;&amp; !userId.equals(session.getLearnerId())) {</span>
+<span class="fc" id="L154">            throw new RuntimeException(&quot;Not authorized to rollback this session payment&quot;);</span>
+        }
+
+<span class="fc" id="L157">        SessionStatus currentStatus = session.getStatus();</span>
+<span class="pc bpc" id="L158" title="1 of 6 branches missed.">        if (currentStatus == SessionStatus.CANCELLED || currentStatus == SessionStatus.REJECTED || currentStatus == SessionStatus.COMPLETED) {</span>
+<span class="fc" id="L159">            log.info(&quot;Skipping payment rollback for session {} because status is {}&quot;, sessionId, currentStatus);</span>
+<span class="fc" id="L160">            return;</span>
+        }
+
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">        if (!session.isTransitionAllowed(SessionStatus.CANCELLED)) {</span>
+<span class="nc" id="L164">            log.warn(&quot;Skipping payment rollback for session {} due to invalid transition {} -&gt; CANCELLED&quot;,</span>
+                    sessionId, currentStatus);
+<span class="nc" id="L166">            return;</span>
+        }
+
+<span class="fc" id="L169">        session.setStatus(SessionStatus.CANCELLED);</span>
+<span class="fc bfc" id="L170" title="All 4 branches covered.">        session.setCancelReason(reason != null &amp;&amp; !reason.isBlank()</span>
+<span class="fc" id="L171">                ? reason</span>
+<span class="fc" id="L172">                : &quot;Rolled back due to payment failure/cancellation&quot;);</span>
+<span class="fc" id="L173">        session = sessionRepository.save(session);</span>
+<span class="fc" id="L174">        invalidateSessionCaches(session);</span>
+
+        // Only emit cancellation event if session was already confirmed to avoid noisy mentor alerts
+        // for unpaid REQUESTED sessions.
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        if (currentStatus == SessionStatus.ACCEPTED) {</span>
+<span class="fc" id="L179">            publishEvent(session, &quot;session.cancelled&quot;);</span>
+        }
+
+<span class="fc" id="L182">        log.info(&quot;Rolled back session {} after payment issue. Previous status: {}&quot;, sessionId, currentStatus);</span>
+<span class="fc" id="L183">    }</span>
+
+    private void invalidateSessionCaches(Session session) {
+<span class="fc" id="L186">        cacheService.evict(CacheService.vKey(&quot;session:&quot; + session.getId()));</span>
+<span class="fc" id="L187">        cacheService.evictByPattern(CacheService.vKey(&quot;session:learner:&quot; + session.getLearnerId() + &quot;:*&quot;));</span>
+<span class="fc" id="L188">        cacheService.evictByPattern(CacheService.vKey(&quot;session:mentor:&quot; + session.getMentorId() + &quot;:*&quot;));</span>
+<span class="fc" id="L189">    }</span>
+
+    private Session getAndValidateOwnership(Long sessionId, Long userId, boolean isMentor) {
+<span class="fc" id="L192">        Session session = sessionRepository.findById(sessionId)</span>
+<span class="fc" id="L193">                .orElseThrow(() -&gt; new RuntimeException(&quot;Session not found: &quot; + sessionId));</span>
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">        Long ownerId = isMentor ? session.getMentorId() : session.getLearnerId();</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">        if (!ownerId.equals(userId)) {</span>
+<span class="fc" id="L196">            throw new RuntimeException(&quot;Not authorized for this session&quot;);</span>
+        }
+<span class="fc" id="L198">        return session;</span>
+    }
+
+    private void validateTransition(Session session, SessionStatus target) {
+<span class="pc bpc" id="L202" title="1 of 2 branches missed.">        if (!session.isTransitionAllowed(target)) {</span>
+<span class="nc" id="L203">            throw new RuntimeException(&quot;Cannot transition from &quot; + session.getStatus() + &quot; to &quot; + target);</span>
+        }
+<span class="fc" id="L205">    }</span>
+
+    private void publishEvent(Session session, String routingKey) {
+        try {
+<span class="fc" id="L209">            SessionEvent event = new SessionEvent(session.getId(), session.getMentorId(),</span>
+<span class="fc" id="L210">                    session.getLearnerId(), session.getTopic(), session.getStatus().name(),</span>
+<span class="fc" id="L211">                    session.getCancelReason(),</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">                    session.getSessionDate() != null ? session.getSessionDate().toString() : null);</span>
+<span class="fc" id="L213">            rabbitTemplate.convertAndSend(RabbitMQConfig.SESSION_EXCHANGE, routingKey, event);</span>
+<span class="fc" id="L214">        } catch (Exception e) {</span>
+<span class="fc" id="L215">            log.error(&quot;Failed to publish session event: {}&quot;, e.getMessage());</span>
+<span class="fc" id="L216">        }</span>
+<span class="fc" id="L217">    }</span>
+
+    private void publishMentorMetricsUpdate(Long mentorId) {
+        try {
+<span class="fc" id="L221">            var metrics = mentorMetricsService.calculateMentorMetrics(mentorId);</span>
+<span class="fc" id="L222">            rabbitTemplate.convertAndSend(RabbitMQConfig.REVIEW_EXCHANGE, &quot;review.summary.updated&quot;,</span>
+<span class="fc" id="L223">                    Map.of(</span>
+                            &quot;mentorId&quot;, mentorId,
+<span class="fc" id="L225">                            &quot;avgRating&quot;, metrics.averageRating(),</span>
+<span class="fc" id="L226">                            &quot;totalReviews&quot;, metrics.totalReviews(),</span>
+<span class="fc" id="L227">                            &quot;totalSessions&quot;, metrics.completedSessions()</span>
+                    ));
+<span class="fc" id="L229">        } catch (Exception e) {</span>
+<span class="fc" id="L230">            log.error(&quot;Failed to publish mentor metrics update for mentor {}: {}&quot;, mentorId, e.getMessage());</span>
+<span class="fc" id="L231">        }</span>
+<span class="fc" id="L232">    }</span>
+
+    private Long resolveMentorUserId(Long requestedMentorId) {
+<span class="fc bfc" id="L235" title="All 2 branches covered.">        if (requestedMentorId == null) {</span>
+<span class="fc" id="L236">            throw new RuntimeException(&quot;Mentor ID is required&quot;);</span>
+        }
+
+<span class="fc" id="L239">        Map&lt;String, Object&gt; user = fetchUserById(requestedMentorId);</span>
+<span class="fc bfc" id="L240" title="All 2 branches covered.">        if (isMentorUser(user)) {</span>
+<span class="fc" id="L241">            return requestedMentorId;</span>
+        }
+
+<span class="fc" id="L244">        Long mappedUserId = mapMentorProfileIdToUserId(requestedMentorId);</span>
+<span class="fc bfc" id="L245" title="All 2 branches covered.">        if (mappedUserId != null) {</span>
+<span class="fc" id="L246">            Map&lt;String, Object&gt; mappedUser = fetchUserById(mappedUserId);</span>
+            // If auth lookup is temporarily unavailable, fall back to mapped userId from mentor profile.
+<span class="fc bfc" id="L248" title="All 4 branches covered.">            if (mappedUser == null || isMentorUser(mappedUser)) {</span>
+<span class="fc" id="L249">                log.warn(&quot;Resolved mentor profile id {} to mentor user id {} for booking request.&quot;, requestedMentorId, mappedUserId);</span>
+<span class="fc" id="L250">                return mappedUserId;</span>
+            }
+        }
+
+<span class="fc" id="L254">        throw new RuntimeException(&quot;Invalid mentor id for booking: &quot; + requestedMentorId);</span>
+    }
+
+    private Map&lt;String, Object&gt; fetchUserById(Long userId) {
+        try {
+<span class="fc" id="L259">            return authServiceClient.getUserById(userId);</span>
+<span class="fc" id="L260">        } catch (Exception e) {</span>
+<span class="fc" id="L261">            log.warn(&quot;Unable to validate user {} via auth-service: {}&quot;, userId, e.getMessage());</span>
+<span class="fc" id="L262">            return null;</span>
+        }
+    }
+
+    private boolean isMentorUser(Map&lt;String, Object&gt; userPayload) {
+<span class="fc bfc" id="L267" title="All 2 branches covered.">        if (userPayload == null) {</span>
+<span class="fc" id="L268">            return false;</span>
+        }
+<span class="fc" id="L270">        Object role = userPayload.get(&quot;role&quot;);</span>
+<span class="fc" id="L271">        return &quot;ROLE_MENTOR&quot;.equals(String.valueOf(role));</span>
+    }
+
+    private Long mapMentorProfileIdToUserId(Long mentorProfileId) {
+        try {
+<span class="fc" id="L276">            Map&lt;String, Object&gt; mentorProfile = mentorProfileClient.getMentorById(mentorProfileId);</span>
+<span class="fc" id="L277">            Object userIdValue = mentorProfile.get(&quot;userId&quot;);</span>
+<span class="fc bfc" id="L278" title="All 2 branches covered.">            if (userIdValue instanceof Number number) {</span>
+<span class="fc" id="L279">                return number.longValue();</span>
+            }
+<span class="fc bfc" id="L281" title="All 2 branches covered.">            if (userIdValue != null) {</span>
+<span class="fc" id="L282">                return Long.parseLong(String.valueOf(userIdValue));</span>
+            }
+<span class="fc" id="L284">        } catch (Exception e) {</span>
+<span class="fc" id="L285">            log.debug(&quot;Mentor profile lookup failed for id {}: {}&quot;, mentorProfileId, e.getMessage());</span>
+<span class="fc" id="L286">        }</span>
+<span class="fc" id="L287">        return null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

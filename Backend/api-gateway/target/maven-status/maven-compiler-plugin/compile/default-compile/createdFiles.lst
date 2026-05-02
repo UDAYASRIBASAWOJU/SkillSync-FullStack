@@ -1,0 +1,9 @@
+com\skillsync\apigateway\ApiGatewayApplication.class
+com\skillsync\apigateway\filter\RateLimitingFilter$RateLimitBucket.class
+com\skillsync\apigateway\filter\CsrfOriginFilter.class
+com\skillsync\apigateway\filter\JwtAuthenticationFilter$Config.class
+com\skillsync\apigateway\controller\HealthController.class
+com\skillsync\apigateway\filter\JwtAuthenticationFilter.class
+com\skillsync\apigateway\filter\RateLimitingFilter.class
+com\skillsync\apigateway\config\CorsConfig.class
+com\skillsync\apigateway\filter\SecurityHeadersFilter.class

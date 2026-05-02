@@ -112,7 +112,7 @@ public class EmailService {
       log.info("[EMAIL] Email sent successfully | to={} | emailType={}", toEmail, emailType);
     } catch (MessagingException e) {
       log.error("[EMAIL] Failed to send email | to={} | emailType={} | error={}", toEmail, emailType, e.getMessage());
-    } catch (Exception e) {
+    } catch (org.springframework.mail.MailException e) {
       log.error("[EMAIL] Unexpected error sending email | to={} | emailType={} | error={}", toEmail, emailType,
           e.getMessage());
     }

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>MentorMapper.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">skillsync-backend</a> &gt; <a href="../index.html" class="el_bundle">user-service</a> &gt; <a href="index.source.html" class="el_package">com.skillsync.user.mapper</a> &gt; <span class="el_source">MentorMapper.java</span></div><h1>MentorMapper.java</h1><pre class="source lang-java linenums">package com.skillsync.user.mapper;
+
+import com.skillsync.user.dto.*;
+import com.skillsync.user.entity.*;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Pure mapping functions for MentorProfile entities.
+ * Used by both MentorCommandService and MentorQueryService (CQRS decoupling).
+ */
+public final class MentorMapper {
+
+    private MentorMapper() {}
+
+    public static MentorProfileResponse toResponse(MentorProfile profile) {
+<span class="fc bfc" id="L19" title="All 2 branches covered.">        List&lt;SkillSummary&gt; skills = profile.getSkills() != null</span>
+<span class="fc" id="L20">                ? profile.getSkills().stream()</span>
+<span class="fc" id="L21">                    .map(s -&gt; new SkillSummary(s.getSkillId(), null, null))</span>
+<span class="fc" id="L22">                    .collect(Collectors.toList())</span>
+<span class="fc" id="L23">                : List.of();</span>
+
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        List&lt;AvailabilitySlotResponse&gt; availability = profile.getSlots() != null</span>
+<span class="fc" id="L26">                ? profile.getSlots().stream()</span>
+<span class="fc" id="L27">                    .map(MentorMapper::toSlotResponse)</span>
+<span class="fc" id="L28">                    .collect(Collectors.toList())</span>
+<span class="fc" id="L29">                : List.of();</span>
+
+<span class="fc" id="L31">        return new MentorProfileResponse(</span>
+<span class="fc" id="L32">                profile.getId(), profile.getUserId(),</span>
+                null, null, null, null,
+<span class="fc" id="L34">                profile.getBio(), profile.getExperienceYears(),</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">                profile.getHourlyRate() != null</span>
+<span class="fc" id="L36">                        ? profile.getHourlyRate()</span>
+<span class="fc" id="L37">                        : BigDecimal.ZERO,</span>
+<span class="fc" id="L38">                profile.getAvgRating(),</span>
+<span class="fc" id="L39">                profile.getTotalReviews(), profile.getTotalSessions(),</span>
+<span class="fc" id="L40">                profile.getStatus().name(), skills, availability</span>
+        );
+    }
+
+    public static AvailabilitySlotResponse toSlotResponse(AvailabilitySlot slot) {
+<span class="nc" id="L45">        return new AvailabilitySlotResponse(</span>
+<span class="nc" id="L46">                slot.getId(), slot.getDayOfWeek(),</span>
+<span class="nc" id="L47">                slot.getStartTime(), slot.getEndTime(), slot.isActive()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

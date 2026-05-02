@@ -1,0 +1,7 @@
+com\skillsync\skill\service\query\SkillQueryServiceTest.class
+com\skillsync\skill\service\command\SkillCommandServiceTest.class
+com\skillsync\skill\service\SkillServiceCoverageTest.class
+com\skillsync\skill\exception\GlobalExceptionHandlerTest.class
+com\skillsync\skill\controller\SkillControllerTest.class
+com\skillsync\skill\repository\SkillRepositoryTest.class
+com\skillsync\skill\service\SkillServiceTest.class

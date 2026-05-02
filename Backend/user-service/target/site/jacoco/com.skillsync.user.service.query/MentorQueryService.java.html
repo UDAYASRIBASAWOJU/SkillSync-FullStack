@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MentorQueryService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">user-service</a> &gt; <a href="index.source.html" class="el_package">com.skillsync.user.service.query</a> &gt; <span class="el_source">MentorQueryService.java</span></div><h1>MentorQueryService.java</h1><pre class="source lang-java linenums">package com.skillsync.user.service.query;
+
+import com.skillsync.cache.CacheService;
+import com.skillsync.user.dto.*;
+import com.skillsync.user.entity.MentorProfile;
+import com.skillsync.user.mapper.MentorMapper;
+import com.skillsync.user.feign.AuthServiceClient;
+import com.skillsync.user.feign.SessionServiceClient;
+import com.skillsync.user.repository.MentorProfileRepository;
+import com.skillsync.user.enums.MentorStatus;
+import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import jakarta.persistence.criteria.JoinType;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * CQRS Query Service for Mentor operations.
+ * Implements cache-aside pattern with stampede + penetration protection.
+ */
+@Service
+@RequiredArgsConstructor
+<span class="fc" id="L36">@Slf4j</span>
+@Transactional(readOnly = true)
+public class MentorQueryService {
+
+    private final MentorProfileRepository mentorProfileRepository;
+    private final CacheService cacheService;
+    private final AuthServiceClient authServiceClient;
+    private final SessionServiceClient sessionServiceClient;
+    private final com.skillsync.user.feign.SkillServiceClient skillServiceClient;
+
+    @Value(&quot;${cache.ttl.mentor:600}&quot;)
+    private long mentorTtl;
+
+    /**
+     * Cache-aside with stampede protection: get mentor by ID.
+     */
+    public MentorProfileResponse getMentorById(Long id) {
+<span class="fc" id="L53">        String cacheKey = CacheService.vKey(&quot;user:mentor:&quot; + id);</span>
+
+<span class="fc" id="L55">        return cacheService.getOrLoad(cacheKey, MentorProfileResponse.class,</span>
+<span class="fc" id="L56">                Duration.ofSeconds(mentorTtl), () -&gt; {</span>
+<span class="fc" id="L57">                    MentorProfile profile = mentorProfileRepository.findById(id).orElse(null);</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">                    if (profile == null) return null;</span>
+<span class="fc" id="L59">                    return enrichProfile(MentorMapper.toResponse(profile));</span>
+                });
+    }
+
+    /**
+     * Cache-aside with stampede protection: get mentor by user ID.
+     */
+    public MentorProfileResponse getMentorByUserId(Long userId) {
+<span class="fc" id="L67">        String cacheKey = CacheService.vKey(&quot;user:mentor:user:&quot; + userId);</span>
+
+<span class="fc" id="L69">        return cacheService.getOrLoad(cacheKey, MentorProfileResponse.class,</span>
+<span class="fc" id="L70">                Duration.ofSeconds(mentorTtl), () -&gt; {</span>
+<span class="fc" id="L71">                    MentorProfile profile = mentorProfileRepository.findByUserId(userId).orElse(null);</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">                    if (profile == null) return null;</span>
+<span class="fc" id="L73">                    return enrichProfile(MentorMapper.toResponse(profile));</span>
+                });
+    }
+
+    public Page&lt;MentorProfileResponse&gt; getPendingApplications(Pageable pageable) {
+<span class="fc" id="L78">        return mentorProfileRepository.findByStatus(MentorStatus.PENDING, pageable)</span>
+<span class="fc" id="L79">                .map(p -&gt; enrichProfile(MentorMapper.toResponse(p)));</span>
+    }
+
+    public Page&lt;MentorProfileResponse&gt; searchMentors(Pageable pageable) {
+<span class="fc" id="L83">        return searchMentors(null, null, null, null, null, pageable);</span>
+    }
+
+    public Page&lt;MentorProfileResponse&gt; searchMentors(
+            String skill,
+            Double rating,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            String search,
+            Pageable pageable) {
+<span class="fc" id="L93">        Specification&lt;MentorProfile&gt; specification = Specification</span>
+<span class="pc" id="L94">                .where((root, query, cb) -&gt; cb.equal(root.get(&quot;status&quot;), MentorStatus.APPROVED));</span>
+
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        if (rating != null) {</span>
+<span class="pc" id="L97">            specification = specification.and((root, query, cb) -&gt; cb.greaterThanOrEqualTo(root.get(&quot;avgRating&quot;), rating));</span>
+        }
+
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        if (minPrice != null) {</span>
+<span class="pc" id="L101">            specification = specification.and((root, query, cb) -&gt; cb.greaterThanOrEqualTo(root.get(&quot;hourlyRate&quot;), minPrice));</span>
+        }
+
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        if (maxPrice != null) {</span>
+<span class="pc" id="L105">            specification = specification.and((root, query, cb) -&gt; cb.lessThanOrEqualTo(root.get(&quot;hourlyRate&quot;), maxPrice));</span>
+        }
+
+<span class="fc bfc" id="L108" title="All 4 branches covered.">        if (search != null &amp;&amp; !search.isBlank()) {</span>
+<span class="fc" id="L109">            String normalizedSearch = &quot;%&quot; + search.trim().toLowerCase() + &quot;%&quot;;</span>
+<span class="pc" id="L110">            specification = specification.and((root, query, cb) -&gt; cb.like(</span>
+<span class="nc" id="L111">                    cb.lower(cb.coalesce(root.get(&quot;bio&quot;), &quot;&quot;)),</span>
+                    normalizedSearch));
+        }
+
+<span class="fc bfc" id="L115" title="All 4 branches covered.">        if (skill != null &amp;&amp; !skill.isBlank()) {</span>
+<span class="fc" id="L116">            List&lt;Long&gt; matchingSkillIds = resolveSkillIds(skill);</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">            if (matchingSkillIds.isEmpty()) {</span>
+<span class="fc" id="L118">                return new PageImpl&lt;&gt;(List.of(), pageable, 0);</span>
+            }
+
+<span class="fc" id="L121">            specification = specification.and((root, query, cb) -&gt; {</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">                if (query != null) {</span>
+<span class="nc" id="L123">                    query.distinct(true);</span>
+                }
+<span class="nc" id="L125">                return root.join(&quot;skills&quot;, JoinType.LEFT).get(&quot;skillId&quot;).in(matchingSkillIds);</span>
+            });
+        }
+
+<span class="fc" id="L129">        return mentorProfileRepository.findAll(specification, pageable)</span>
+<span class="fc" id="L130">                .map(p -&gt; enrichProfile(MentorMapper.toResponse(p)));</span>
+    }
+
+    private List&lt;Long&gt; resolveSkillIds(String skillSearchText) {
+        try {
+<span class="fc" id="L135">            return skillServiceClient.searchSkills(skillSearchText.trim()).stream()</span>
+<span class="fc" id="L136">                    .map(SkillSummary::id)</span>
+<span class="fc" id="L137">                    .filter(Objects::nonNull)</span>
+<span class="fc" id="L138">                    .toList();</span>
+<span class="fc" id="L139">        } catch (Exception e) {</span>
+<span class="fc" id="L140">            log.warn(&quot;Failed to resolve skill ids for search text '{}': {}&quot;, skillSearchText, e.getMessage());</span>
+<span class="fc" id="L141">            return List.of();</span>
+        }
+    }
+
+    private MentorProfileResponse enrichProfile(MentorProfileResponse profile) {
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">        if (profile == null) return null;</span>
+<span class="fc" id="L147">        MentorProfileResponse enriched = profile;</span>
+        
+        // 1. Enrich User Details
+        try {
+<span class="fc" id="L151">            Map&lt;String, Object&gt; user = authServiceClient.getUserById(profile.userId());</span>
+<span class="fc" id="L152">            enriched = new MentorProfileResponse(</span>
+<span class="fc" id="L153">                    profile.id(), profile.userId(),</span>
+<span class="fc" id="L154">                    (String) user.get(&quot;firstName&quot;),</span>
+<span class="fc" id="L155">                    (String) user.get(&quot;lastName&quot;),</span>
+<span class="fc" id="L156">                    (String) user.get(&quot;email&quot;),</span>
+<span class="fc" id="L157">                    (String) user.get(&quot;avatarUrl&quot;),</span>
+<span class="fc" id="L158">                    profile.bio(), profile.experienceYears(),</span>
+<span class="fc" id="L159">                    profile.hourlyRate(), profile.avgRating(),</span>
+<span class="fc" id="L160">                    profile.totalReviews(), profile.totalSessions(),</span>
+<span class="fc" id="L161">                    profile.status(), profile.skills(), profile.availability()</span>
+            );
+<span class="fc" id="L163">        } catch (Exception e) {</span>
+<span class="fc" id="L164">            log.warn(&quot;Failed to enrich user details for mentor userId {}: {}&quot;, profile.userId(), e.getMessage());</span>
+<span class="fc" id="L165">        }</span>
+
+        // 2. Enrich Skill Names
+<span class="pc bpc" id="L168" title="1 of 4 branches missed.">        if (enriched.skills() != null &amp;&amp; !enriched.skills().isEmpty()) {</span>
+            try {
+<span class="fc" id="L170">                List&lt;Long&gt; skillIds = enriched.skills().stream()</span>
+<span class="fc" id="L171">                        .map(SkillSummary::id)</span>
+<span class="fc" id="L172">                        .collect(Collectors.toList());</span>
+<span class="fc" id="L173">                List&lt;SkillSummary&gt; skillNames = skillServiceClient.getSkillsByIds(skillIds);</span>
+                
+<span class="fc" id="L175">                enriched = new MentorProfileResponse(</span>
+<span class="fc" id="L176">                        enriched.id(), enriched.userId(),</span>
+<span class="fc" id="L177">                        enriched.firstName(), enriched.lastName(),</span>
+<span class="fc" id="L178">                        enriched.email(), enriched.avatarUrl(),</span>
+<span class="fc" id="L179">                        enriched.bio(), enriched.experienceYears(),</span>
+<span class="fc" id="L180">                        enriched.hourlyRate(), enriched.avgRating(),</span>
+<span class="fc" id="L181">                        enriched.totalReviews(), enriched.totalSessions(),</span>
+<span class="fc" id="L182">                        enriched.status(), skillNames, enriched.availability()</span>
+                );
+<span class="fc" id="L184">            } catch (Exception e) {</span>
+<span class="fc" id="L185">                log.warn(&quot;Failed to enrich skill names for mentor userId {}: {}&quot;, profile.userId(), e.getMessage());</span>
+<span class="fc" id="L186">            }</span>
+        }
+
+        // 3. Enrich metrics from session-service (single source of truth)
+        try {
+<span class="fc" id="L191">            Map&lt;String, Object&gt; metrics = sessionServiceClient.getMentorMetrics(profile.userId());</span>
+<span class="fc" id="L192">            enriched = new MentorProfileResponse(</span>
+<span class="fc" id="L193">                    enriched.id(), enriched.userId(),</span>
+<span class="fc" id="L194">                    enriched.firstName(), enriched.lastName(),</span>
+<span class="fc" id="L195">                    enriched.email(), enriched.avatarUrl(),</span>
+<span class="fc" id="L196">                    enriched.bio(), enriched.experienceYears(),</span>
+<span class="fc" id="L197">                    enriched.hourlyRate(), asDouble(metrics.get(&quot;averageRating&quot;), enriched.avgRating()),</span>
+<span class="fc" id="L198">                    asInt(metrics.get(&quot;totalReviews&quot;), enriched.totalReviews()),</span>
+<span class="fc" id="L199">                    asInt(metrics.get(&quot;completedSessions&quot;), enriched.totalSessions()),</span>
+<span class="fc" id="L200">                    enriched.status(), enriched.skills(), enriched.availability()</span>
+            );
+<span class="fc" id="L202">        } catch (Exception e) {</span>
+<span class="fc" id="L203">            log.warn(&quot;Failed to enrich session metrics for mentor userId {}: {}&quot;, profile.userId(), e.getMessage());</span>
+<span class="fc" id="L204">        }</span>
+        
+<span class="fc" id="L206">        return enriched;</span>
+    }
+
+    private int asInt(Object value, int fallback) {
+<span class="fc bfc" id="L210" title="All 2 branches covered.">        if (value instanceof Number number) {</span>
+<span class="fc" id="L211">            return number.intValue();</span>
+        }
+<span class="fc" id="L213">        return fallback;</span>
+    }
+
+    private double asDouble(Object value, double fallback) {
+<span class="fc bfc" id="L217" title="All 2 branches covered.">        if (value instanceof Number number) {</span>
+<span class="fc" id="L218">            return number.doubleValue();</span>
+        }
+<span class="fc" id="L220">        return fallback;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

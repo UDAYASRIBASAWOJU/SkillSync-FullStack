@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>ReviewCommandService.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">skillsync-backend</a> &gt; <a href="../index.html" class="el_bundle">session-service</a> &gt; <a href="index.source.html" class="el_package">com.skillsync.session.service.command</a> &gt; <span class="el_source">ReviewCommandService.java</span></div><h1>ReviewCommandService.java</h1><pre class="source lang-java linenums">package com.skillsync.session.service.command;
+
+import com.skillsync.cache.CacheService;
+import com.skillsync.session.config.RabbitMQConfig;
+import com.skillsync.session.dto.*;
+import com.skillsync.session.entity.Review;
+import com.skillsync.session.entity.Session;
+import com.skillsync.session.enums.SessionStatus;
+import com.skillsync.session.event.ReviewSubmittedEvent;
+import com.skillsync.session.feign.AuthServiceClient;
+import com.skillsync.session.feign.MentorProfileClient;
+import com.skillsync.session.mapper.ReviewMapper;
+import com.skillsync.session.repository.ReviewRepository;
+import com.skillsync.session.repository.SessionRepository;
+import com.skillsync.session.service.MentorMetricsService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
+
+/**
+ * CQRS Command Service for Review operations.
+ * Handles all write operations, cache invalidation, and event publishing.
+ */
+@Service
+@RequiredArgsConstructor
+<span class="fc" id="L30">@Slf4j</span>
+public class ReviewCommandService {
+
+    private final ReviewRepository reviewRepository;
+    private final SessionRepository sessionRepository;
+    private final RabbitTemplate rabbitTemplate;
+    private final CacheService cacheService;
+    private final AuthServiceClient authServiceClient;
+    private final MentorProfileClient mentorProfileClient;
+    private final MentorMetricsService mentorMetricsService;
+
+    @Transactional
+    public ReviewResponse submitReview(Long reviewerId, ReviewRequest request) {
+<span class="fc" id="L43">        Session session = sessionRepository.findById(request.sessionId())</span>
+<span class="fc" id="L44">                .orElseThrow(() -&gt; new RuntimeException(&quot;Session not found: &quot; + request.sessionId()));</span>
+
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if (session.getStatus() != SessionStatus.COMPLETED) {</span>
+<span class="fc" id="L47">            throw new RuntimeException(&quot;Can only review completed sessions&quot;);</span>
+        }
+
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (!reviewerId.equals(session.getLearnerId())) {</span>
+<span class="fc" id="L51">            throw new RuntimeException(&quot;Only the learner can review this session&quot;);</span>
+        }
+
+<span class="fc" id="L54">        Long mentorId = resolveMentorUserId(request.mentorId());</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (!mentorId.equals(session.getMentorId())) {</span>
+<span class="fc" id="L56">            throw new RuntimeException(&quot;Mentor does not match the completed session&quot;);</span>
+        }
+
+<span class="fc" id="L59">        Map&lt;String, Object&gt; mentor = fetchUserById(session.getMentorId());</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        if (!isMentorUser(mentor)) {</span>
+<span class="nc" id="L61">            throw new RuntimeException(&quot;Invalid mentor id: &quot; + request.mentorId());</span>
+        }
+
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (reviewRepository.existsBySessionId(session.getId())) {</span>
+<span class="fc" id="L65">            throw new RuntimeException(&quot;This session has already been reviewed&quot;);</span>
+        }
+
+<span class="fc" id="L68">        Review review = Review.builder()</span>
+<span class="fc" id="L69">                .sessionId(session.getId()).mentorId(mentorId).reviewerId(reviewerId)</span>
+<span class="fc" id="L70">                .rating(request.rating()).comment(normalizeComment(request.comment())).build();</span>
+<span class="fc" id="L71">        review = reviewRepository.saveAndFlush(review);</span>
+
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        if (session.isDefaultRatingApplied()) {</span>
+<span class="fc" id="L74">            session.setDefaultRatingApplied(false);</span>
+<span class="fc" id="L75">            sessionRepository.save(session);</span>
+        }
+
+        // Invalidate versioned review caches
+<span class="fc" id="L79">        cacheService.evictByPattern(CacheService.vKey(&quot;review:mentor:&quot; + mentorId + &quot;:*&quot;));</span>
+<span class="fc" id="L80">        cacheService.evictByPattern(CacheService.vKey(&quot;review:user:&quot; + reviewerId + &quot;:*&quot;));</span>
+
+        // Publish event
+<span class="fc" id="L83">        var metrics = mentorMetricsService.calculateMentorMetrics(mentorId);</span>
+        try {
+<span class="fc" id="L85">            rabbitTemplate.convertAndSend(RabbitMQConfig.REVIEW_EXCHANGE, &quot;review.submitted&quot;,</span>
+<span class="fc" id="L86">                    new ReviewSubmittedEvent(review.getId(), mentorId, review.getRating(),</span>
+<span class="fc" id="L87">                            metrics.averageRating(), metrics.totalReviews(),</span>
+<span class="fc" id="L88">                            review.getComment()));</span>
+
+<span class="fc" id="L90">            rabbitTemplate.convertAndSend(RabbitMQConfig.REVIEW_EXCHANGE, &quot;review.summary.updated&quot;,</span>
+<span class="fc" id="L91">                    Map.of(</span>
+                            &quot;mentorId&quot;, mentorId,
+<span class="fc" id="L93">                            &quot;avgRating&quot;, metrics.averageRating(),</span>
+<span class="fc" id="L94">                            &quot;totalReviews&quot;, metrics.totalReviews(),</span>
+<span class="fc" id="L95">                            &quot;totalSessions&quot;, metrics.completedSessions()</span>
+                    ));
+<span class="fc" id="L97">        } catch (Exception e) {</span>
+<span class="fc" id="L98">            log.error(&quot;Failed to publish review event: {}&quot;, e.getMessage());</span>
+<span class="fc" id="L99">        }</span>
+
+<span class="fc" id="L101">        log.info(&quot;[CQRS:COMMAND] Review {} submitted. Cache invalidated.&quot;, review.getId());</span>
+<span class="fc" id="L102">        return ReviewMapper.toResponse(review);</span>
+    }
+
+    private String normalizeComment(String comment) {
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if (comment == null) {</span>
+<span class="fc" id="L107">            return null;</span>
+        }
+<span class="fc" id="L109">        String normalized = comment.trim();</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        return normalized.isEmpty() ? null : normalized;</span>
+    }
+
+    private Long resolveMentorUserId(Long requestedMentorId) {
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (requestedMentorId == null) {</span>
+<span class="fc" id="L115">            throw new RuntimeException(&quot;Mentor ID is required&quot;);</span>
+        }
+
+<span class="fc" id="L118">        Map&lt;String, Object&gt; user = fetchUserById(requestedMentorId);</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">        if (isMentorUser(user)) {</span>
+<span class="fc" id="L120">            return requestedMentorId;</span>
+        }
+
+<span class="fc" id="L123">        Long mappedUserId = mapMentorProfileIdToUserId(requestedMentorId);</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        if (mappedUserId != null) {</span>
+<span class="fc" id="L125">            Map&lt;String, Object&gt; mappedUser = fetchUserById(mappedUserId);</span>
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">            if (isMentorUser(mappedUser)) {</span>
+<span class="fc" id="L127">                return mappedUserId;</span>
+            }
+        }
+
+<span class="fc" id="L131">        throw new RuntimeException(&quot;Invalid mentor id: &quot; + requestedMentorId);</span>
+    }
+
+    private Map&lt;String, Object&gt; fetchUserById(Long userId) {
+        try {
+<span class="fc" id="L136">            return authServiceClient.getUserById(userId);</span>
+<span class="nc" id="L137">        } catch (Exception e) {</span>
+<span class="nc" id="L138">            log.warn(&quot;Unable to validate user {} via auth-service: {}&quot;, userId, e.getMessage());</span>
+<span class="nc" id="L139">            return null;</span>
+        }
+    }
+
+    private boolean isMentorUser(Map&lt;String, Object&gt; userPayload) {
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">        if (userPayload == null) {</span>
+<span class="nc" id="L145">            return false;</span>
+        }
+<span class="fc" id="L147">        Object role = userPayload.get(&quot;role&quot;);</span>
+<span class="fc" id="L148">        return &quot;ROLE_MENTOR&quot;.equals(String.valueOf(role));</span>
+    }
+
+    private Long mapMentorProfileIdToUserId(Long mentorProfileId) {
+        try {
+<span class="fc" id="L153">            Map&lt;String, Object&gt; mentorProfile = mentorProfileClient.getMentorById(mentorProfileId);</span>
+<span class="fc" id="L154">            Object userIdValue = mentorProfile.get(&quot;userId&quot;);</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">            if (userIdValue instanceof Number number) {</span>
+<span class="fc" id="L156">                return number.longValue();</span>
+            }
+<span class="nc bnc" id="L158" title="All 2 branches missed.">            if (userIdValue != null) {</span>
+<span class="nc" id="L159">                return Long.parseLong(String.valueOf(userIdValue));</span>
+            }
+<span class="fc" id="L161">        } catch (Exception e) {</span>
+<span class="fc" id="L162">            log.debug(&quot;Mentor profile lookup failed for id {}: {}&quot;, mentorProfileId, e.getMessage());</span>
+<span class="nc" id="L163">        }</span>
+<span class="fc" id="L164">        return null;</span>
+    }
+
+    public void deleteReview(Long id) {
+<span class="fc" id="L168">        Review review = reviewRepository.findById(id).orElse(null);</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        if (review != null) {</span>
+<span class="fc" id="L170">            cacheService.evict(CacheService.vKey(&quot;review:&quot; + id));</span>
+<span class="fc" id="L171">            cacheService.evictByPattern(CacheService.vKey(&quot;review:mentor:&quot; + review.getMentorId() + &quot;:*&quot;));</span>
+<span class="fc" id="L172">            cacheService.evictByPattern(CacheService.vKey(&quot;review:user:&quot; + review.getReviewerId() + &quot;:*&quot;));</span>
+        }
+<span class="fc" id="L174">        reviewRepository.deleteById(id);</span>
+<span class="fc" id="L175">        log.info(&quot;[CQRS:COMMAND] Review {} deleted. Cache invalidated.&quot;, id);</span>
+<span class="fc" id="L176">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

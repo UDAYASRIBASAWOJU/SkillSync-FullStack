@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReviewService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">session-service</a> &gt; <a href="index.source.html" class="el_package">com.skillsync.session.service</a> &gt; <span class="el_source">ReviewService.java</span></div><h1>ReviewService.java</h1><pre class="source lang-java linenums">package com.skillsync.session.service;
+
+import com.skillsync.session.config.RabbitMQConfig;
+import com.skillsync.session.dto.*;
+import com.skillsync.session.entity.Review;
+import com.skillsync.session.entity.Session;
+import com.skillsync.session.enums.SessionStatus;
+import com.skillsync.session.event.ReviewSubmittedEvent;
+import com.skillsync.session.repository.ReviewRepository;
+import com.skillsync.session.repository.SessionRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+<span class="fc" id="L23">@Service @RequiredArgsConstructor @Slf4j</span>
+public class ReviewService {
+    private final ReviewRepository reviewRepository;
+    private final SessionRepository sessionRepository;
+    private final RabbitTemplate rabbitTemplate;
+
+    @Transactional
+    public ReviewResponse submitReview(Long reviewerId, CreateReviewRequest request) {
+<span class="fc" id="L31">        Session session = sessionRepository.findById(request.sessionId())</span>
+<span class="fc" id="L32">                .orElseThrow(() -&gt; new RuntimeException(&quot;Session not found: &quot; + request.sessionId()));</span>
+
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (session.getStatus() != SessionStatus.COMPLETED) {</span>
+<span class="fc" id="L35">            throw new RuntimeException(&quot;Can only review completed sessions&quot;);</span>
+        }
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (!reviewerId.equals(session.getLearnerId())) {</span>
+<span class="fc" id="L38">            throw new RuntimeException(&quot;Only the learner can review&quot;);</span>
+        }
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (reviewRepository.existsBySessionId(request.sessionId())) {</span>
+<span class="fc" id="L41">            throw new RuntimeException(&quot;Session already reviewed&quot;);</span>
+        }
+
+<span class="fc" id="L44">        Long mentorId = session.getMentorId();</span>
+
+<span class="fc" id="L46">        Review review = Review.builder()</span>
+<span class="fc" id="L47">                .sessionId(request.sessionId()).mentorId(mentorId).reviewerId(reviewerId)</span>
+<span class="fc" id="L48">                .rating(request.rating()).comment(request.comment()).build();</span>
+<span class="fc" id="L49">        review = reviewRepository.save(review);</span>
+
+<span class="fc" id="L51">        Double avgRating = reviewRepository.calculateAverageRating(mentorId);</span>
+<span class="fc" id="L52">        long totalReviews = reviewRepository.countByMentorId(mentorId);</span>
+        try {
+<span class="fc" id="L54">            rabbitTemplate.convertAndSend(RabbitMQConfig.REVIEW_EXCHANGE, &quot;review.submitted&quot;,</span>
+<span class="fc" id="L55">                    new ReviewSubmittedEvent(review.getId(), mentorId, request.rating(),</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">                            avgRating != null ? avgRating : 0.0, (int) totalReviews,</span>
+<span class="fc" id="L57">                            request.comment()));</span>
+<span class="fc" id="L58">        } catch (Exception e) {</span>
+<span class="fc" id="L59">            log.error(&quot;Failed to publish review event: {}&quot;, e.getMessage());</span>
+<span class="fc" id="L60">        }</span>
+
+<span class="fc" id="L62">        log.info(&quot;Review {} submitted for session {} by reviewer {}&quot;, review.getId(), request.sessionId(), reviewerId);</span>
+<span class="fc" id="L63">        return mapToResponse(review);</span>
+    }
+
+    public Page&lt;ReviewResponse&gt; getMentorReviews(Long mentorId, Pageable pageable) {
+<span class="fc" id="L67">        return reviewRepository.findByMentorIdOrderByCreatedAtDesc(mentorId, pageable).map(this::mapToResponse);</span>
+    }
+
+    public Page&lt;ReviewResponse&gt; getMyReviews(Long reviewerId, Pageable pageable) {
+<span class="fc" id="L71">        return reviewRepository.findByReviewerIdOrderByCreatedAtDesc(reviewerId, pageable).map(this::mapToResponse);</span>
+    }
+
+    public ReviewResponse getReviewById(Long id) {
+<span class="fc" id="L75">        return reviewRepository.findById(id).map(this::mapToResponse)</span>
+<span class="fc" id="L76">                .orElseThrow(() -&gt; new RuntimeException(&quot;Review not found: &quot; + id));</span>
+    }
+
+    public MentorRatingSummary getMentorRatingSummary(Long mentorId) {
+<span class="fc" id="L80">        long total = reviewRepository.countByMentorId(mentorId);</span>
+<span class="fc" id="L81">        long completedSessions = sessionRepository.countByMentorIdAndStatus(mentorId, SessionStatus.COMPLETED);</span>
+<span class="fc" id="L82">        long defaultRatedSessions = sessionRepository</span>
+<span class="fc" id="L83">            .countByMentorIdAndStatusAndDefaultRatingAppliedTrue(mentorId, SessionStatus.COMPLETED);</span>
+<span class="fc" id="L84">        double totalExplicitRating = reviewRepository.calculateTotalRating(mentorId);</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        double avg = completedSessions == 0</span>
+<span class="fc" id="L86">            ? 0.0</span>
+<span class="fc" id="L87">            : (totalExplicitRating + (defaultRatedSessions * 2.5d)) / completedSessions;</span>
+<span class="fc" id="L88">        List&lt;Object[]&gt; distribution = reviewRepository.getRatingDistribution(mentorId);</span>
+<span class="fc" id="L89">        Map&lt;Integer, Integer&gt; distMap = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        for (Object[] row : distribution) {</span>
+<span class="fc" id="L91">            distMap.put((Integer) row[0], ((Long) row[1]).intValue());</span>
+<span class="fc" id="L92">        }</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        return new MentorRatingSummary(</span>
+            mentorId,
+            avg,
+            (int) total,
+            completedSessions,
+            defaultRatedSessions,
+            completedSessions == 0,
+            distMap
+        );
+    }
+
+<span class="fc" id="L104">    public void deleteReview(Long id) { reviewRepository.deleteById(id); }</span>
+
+    private ReviewResponse mapToResponse(Review r) {
+<span class="fc" id="L107">        return new ReviewResponse(r.getId(), r.getSessionId(), r.getMentorId(), r.getReviewerId(),</span>
+<span class="fc" id="L108">                r.getRating(), r.getComment(), r.getCreatedAt());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

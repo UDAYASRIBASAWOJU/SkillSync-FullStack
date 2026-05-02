@@ -1,0 +1,10 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+api-gateway,com.skillsync.apigateway.config,CorsConfig,0,63,0,0,0,13,0,2,0,2
+api-gateway,com.skillsync.apigateway.filter,SecurityHeadersFilter,0,33,0,0,0,9,0,3,0,3
+api-gateway,com.skillsync.apigateway.filter,RateLimitingFilter,26,313,5,57,4,57,7,35,3,8
+api-gateway,com.skillsync.apigateway.filter,JwtAuthenticationFilter,0,154,2,12,0,37,2,11,0,6
+api-gateway,com.skillsync.apigateway.filter,JwtAuthenticationFilter.Config,0,3,0,0,0,1,0,1,0,1
+api-gateway,com.skillsync.apigateway.filter,CsrfOriginFilter,0,72,0,10,0,15,0,9,0,4
+api-gateway,com.skillsync.apigateway.filter,RateLimitingFilter.RateLimitBucket,0,12,0,0,0,4,0,1,0,1
+api-gateway,com.skillsync.apigateway,ApiGatewayApplication,8,0,0,0,3,0,2,0,2,0
+api-gateway,com.skillsync.apigateway.controller,HealthController,0,8,0,0,0,2,0,2,0,2

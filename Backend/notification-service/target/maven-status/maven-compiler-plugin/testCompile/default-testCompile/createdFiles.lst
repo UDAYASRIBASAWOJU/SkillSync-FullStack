@@ -1,0 +1,15 @@
+com\skillsync\notification\service\NotificationServiceTest.class
+com\skillsync\notification\service\query\NotificationQueryServiceTest.class
+com\skillsync\notification\consumer\ReviewEventConsumerTest.class
+com\skillsync\notification\consumer\SessionEventConsumerTest.class
+com\skillsync\notification\consumer\EmailRetryConsumerTest.class
+com\skillsync\notification\consumer\PaymentEventConsumerTest.class
+com\skillsync\notification\service\EmailServiceTest$PublishRetryEventTests.class
+com\skillsync\notification\consumer\SessionEventConsumerCoverageTest.class
+com\skillsync\notification\consumer\MentorEventConsumerTest.class
+com\skillsync\notification\service\EmailServiceTest$BuildDetailsHtmlTests.class
+com\skillsync\notification\controller\NotificationControllerTest.class
+com\skillsync\notification\service\command\NotificationCommandServiceTest.class
+com\skillsync\notification\service\EmailServiceTest$SendEmailTests.class
+com\skillsync\notification\service\EmailServiceTest.class
+com\skillsync\notification\service\WebSocketServiceTest.class
