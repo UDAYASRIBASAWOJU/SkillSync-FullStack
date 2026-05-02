@@ -1,0 +1,7 @@
+C:\Users\udaya\Downloads\SkillSync_FullStack\SkillSync-FullStack\Backend\api-gateway\src\main\java\com\skillsync\apigateway\ApiGatewayApplication.java
+C:\Users\udaya\Downloads\SkillSync_FullStack\SkillSync-FullStack\Backend\api-gateway\src\main\java\com\skillsync\apigateway\config\CorsConfig.java
+C:\Users\udaya\Downloads\SkillSync_FullStack\SkillSync-FullStack\Backend\api-gateway\src\main\java\com\skillsync\apigateway\controller\HealthController.java
+C:\Users\udaya\Downloads\SkillSync_FullStack\SkillSync-FullStack\Backend\api-gateway\src\main\java\com\skillsync\apigateway\filter\CsrfOriginFilter.java
+C:\Users\udaya\Downloads\SkillSync_FullStack\SkillSync-FullStack\Backend\api-gateway\src\main\java\com\skillsync\apigateway\filter\JwtAuthenticationFilter.java
+C:\Users\udaya\Downloads\SkillSync_FullStack\SkillSync-FullStack\Backend\api-gateway\src\main\java\com\skillsync\apigateway\filter\RateLimitingFilter.java
+C:\Users\udaya\Downloads\SkillSync_FullStack\SkillSync-FullStack\Backend\api-gateway\src\main\java\com\skillsync\apigateway\filter\SecurityHeadersFilter.java
